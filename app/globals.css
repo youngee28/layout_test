@@ -1,8 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #eef4ff;
+  --foreground: #0f172a;
+  --page-background: #eef4ff;
+  --page-background-soft: #f8fbff;
+  --surface-shell: rgba(255, 255, 255, 0.72);
+  --surface-panel: rgba(255, 255, 255, 0.9);
+  --surface-card: #ffffff;
+  --surface-muted: #f4f7ff;
+  --surface-accent: #edf3ff;
+  --panel-border: rgba(255, 255, 255, 0.78);
+  --border-subtle: rgba(148, 163, 184, 0.22);
+  --border-strong: rgba(59, 91, 219, 0.2);
+  --text-primary: #162033;
+  --text-secondary: #516079;
+  --text-muted: #7a88a1;
+  --accent: #3366ff;
+  --accent-strong: #5b3df5;
+  --accent-soft: #edf3ff;
+  --accent-text: #2d57d6;
+  --shadow-soft: 0 24px 60px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 18px 40px rgba(52, 84, 199, 0.14);
+  --shadow-accent-soft: 0 12px 30px rgba(52, 84, 199, 0.1);
+  --shadow-accent-hover: 0 28px 60px rgba(52, 84, 199, 0.16);
+  --shadow-neutral-soft: 0 12px 28px rgba(148, 163, 184, 0.14);
+  --glow-top-left: rgba(91, 61, 245, 0.12);
+  --glow-top-right: rgba(51, 102, 255, 0.12);
+  --glow-hero: rgba(91, 61, 245, 0.18);
+  --glow-side: rgba(51, 102, 255, 0.12);
+  --upload-card-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 247, 255, 0.92));
+  --radius-shell: 30px;
+  --radius-card: 24px;
+  --radius-pill: 999px;
 }
 
 @theme inline {
@@ -12,15 +42,32 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  color-scheme: light;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-image:
+    radial-gradient(circle at top left, var(--glow-top-left), transparent 30%),
+    radial-gradient(circle at top right, var(--glow-top-right), transparent 32%),
+    linear-gradient(180deg, var(--page-background-soft) 0%, var(--page-background) 100%);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), sans-serif;
+  min-height: 100vh;
+}
+
+a,
+button {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
 }
