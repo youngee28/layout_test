@@ -3,15 +3,16 @@ import { config as loadEnv } from "dotenv";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+loadEnv({ path: ".env.local", override: false });
 loadEnv({ path: ".env", override: false });
 
 const PROJECT_ROOT = process.cwd();
 const INPUT_DIR = path.join(PROJECT_ROOT, "input");
 const OUTPUT_DIR = path.join(PROJECT_ROOT, "output");
-const CSV_PATH = path.join(INPUT_DIR, "data.csv");
+const CSV_PATH = path.join(INPUT_DIR, "it_service_combined.csv");
 const SYSTEM_PROMPT_PATH = path.join(INPUT_DIR, "system-prompt.txt");
 const OUTPUT_PATH = path.join(OUTPUT_DIR, "generated.tsx");
-const DEFAULT_MODEL = "gemini-3-flash-preview";
+const DEFAULT_MODEL = "gemini-2.5-flash";
 
 async function readRequiredFile(filePath: string, label: string): Promise<string> {
   try {
@@ -36,7 +37,7 @@ function getApiKey(): string {
 
   if (!apiKey) {
     throw new Error(
-      "Missing Gemini API key. Set GEMINI_API_KEY or GOOGLE_API_KEY in .env or your shell.",
+      "Missing Gemini API key. Set GEMINI_API_KEY or GOOGLE_API_KEY in .env.local or your shell.",
     );
   }
 
@@ -66,14 +67,14 @@ function buildUserPrompt(csvText: string): string {
 }
 
 function validateGeneratedCode(text: string): string {
-  const normalized = text
-    .trim()
-    .replace(/^```[a-zA-Z0-9_-]*\s*/u, "")
-    .replace(/\s*```$/u, "")
-    .trim();
+  const normalized = text.trim();
 
   if (!normalized) {
     throw new Error("Gemini returned an empty response.");
+  }
+
+  if (normalized.includes("```")) {
+    throw new Error("Gemini returned Markdown fences. Tighten the prompt and retry.");
   }
 
   if (!/export\s+default\s+function\s+GeneratedPreview\s*\(/.test(normalized)) {
