@@ -34,3 +34,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Local JSX generation from CSV
+
+1. Put your CSV file at `input/data.csv`.
+2. Put your system prompt at `input/system-prompt.txt`.
+3. Add `GEMINI_API_KEY=...` to `.env`.
+4. Run `pnpm generate:jsx`.
+5. Read the generated file at `output/generated.tsx`.
+
+Optional:
+
+- Set `GEMINI_MODEL=gemini-2.5-flash` in `.env` to override the default model.
