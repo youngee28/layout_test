@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "generate:jsx": "bun scripts/generate-jsx.ts"
+    "generate:jsx": "bun scripts/generate-jsx.ts",
+    "generate:konva": "bun scripts/generate-konva.ts"
   },
   "dependencies": {
     "@google/genai": "^1.48.0",
