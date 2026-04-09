@@ -3,9 +3,7 @@
 #data
 /input/data.csv
 /input/it_service_combined.csv
-/input/
 /output/
-/scripts/
 
 # dependencies
 /node_modules
