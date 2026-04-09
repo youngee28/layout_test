@@ -13,7 +13,7 @@ export function HomeLandingPage() {
 
             <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center text-center">
               <div className="inline-flex items-center rounded-[var(--radius-pill)] border border-[var(--border-strong)] bg-[var(--accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--accent-text)] shadow-[var(--shadow-accent-soft)]">
-                AI 인포그래픽 생성
+              레이아웃 캔버스 생성
               </div>
 
               <h1 className="mt-6 max-w-3xl text-4xl font-bold tracking-tight text-[var(--text-primary)] sm:text-5xl lg:text-6xl lg:leading-[1.1]">
