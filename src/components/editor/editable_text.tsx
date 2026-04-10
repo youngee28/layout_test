@@ -51,37 +51,55 @@ export function EditableText({
       textarea.style.height = `${textarea.scrollHeight}px`;
     };
 
+    let didExit = false;
+
     const finish = () => {
+      if (didExit) {
+        return;
+      }
+
+      didExit = true;
+      const nextText = textarea.value;
+
       onChangeAction({
         ...element,
-        text: textarea.value,
+        text: nextText,
       });
-      setDraft(textarea.value);
+      setDraft(nextText);
       setIsEditing(false);
       setTextareaStyle(null);
-      textarea.remove();
     };
 
     const cancel = () => {
+      if (didExit) {
+        return;
+      }
+
+      didExit = true;
       setDraft(element.text);
       setIsEditing(false);
       setTextareaStyle(null);
-      textarea.remove();
     };
 
-    textarea.addEventListener("input", resize);
-    textarea.addEventListener("blur", finish);
-    textarea.addEventListener("keydown", (event) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.isComposing) {
+        return;
+      }
+
       if (event.key === "Escape") {
         event.preventDefault();
         cancel();
+        return;
       }
 
       if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
         finish();
       }
-    });
+    };
+
+    textarea.addEventListener("input", resize);
+    textarea.addEventListener("keydown", handleKeyDown);
 
     document.body.appendChild(textarea);
 
@@ -94,7 +112,11 @@ export function EditableText({
     return () => {
       window.cancelAnimationFrame(frameId);
       textarea.removeEventListener("input", resize);
-      textarea.remove();
+      textarea.removeEventListener("keydown", handleKeyDown);
+
+      if (textarea.isConnected) {
+        textarea.remove();
+      }
     };
   }, [draft, element, isEditing, onChangeAction, textareaStyle]);
 
@@ -107,19 +129,20 @@ export function EditableText({
     }
 
     const containerRect = stage.container().getBoundingClientRect();
-    const position = node.getAbsolutePosition();
+    const position = node.getAbsoluteTransform().point({ x: 0, y: 0 });
+    const absoluteScale = node.getAbsoluteScale();
 
     setDraft(element.text);
     setTextareaStyle({
       position: "fixed",
       top: containerRect.top + position.y,
       left: containerRect.left + position.x,
-      width: Math.max(120, node.width() * node.scaleX()),
-      minHeight: node.height(),
-      padding: "8px 10px",
+      width: Math.max(120 * absoluteScale.x, node.width() * absoluteScale.x),
+      minHeight: node.height() * absoluteScale.y,
+      padding: `${8 * absoluteScale.y}px ${10 * absoluteScale.x}px`,
       margin: 0,
       border: "1px solid var(--border-strong)",
-      borderRadius: "16px",
+      borderRadius: `${16 * absoluteScale.y}px`,
       outline: "none",
       resize: "none",
       overflow: "hidden",
@@ -127,7 +150,7 @@ export function EditableText({
       color: "var(--text-primary)",
       boxShadow: "var(--shadow-card)",
       fontFamily: "var(--font-geist-sans), sans-serif",
-      fontSize: `${element.fontSize}px`,
+      fontSize: `${element.fontSize * absoluteScale.y}px`,
       fontWeight: element.fontStyle === "bold" ? "700" : "400",
       lineHeight: "1.2",
       zIndex: 1000,
