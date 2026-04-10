@@ -45,8 +45,8 @@ export function EditableRect({
         cornerRadius={element.cornerRadius}
         draggable
         onMouseDown={(event) => {
-          event.cancelBubble = true;
-          onSelectAction();
+          event.cancelBubble = true; // 이벤트가 부모(Layer/Stage)로 퍼지는 것을 방지
+          onSelectAction(); // 부모에게 선택된 상태임을 전달
         }}
         onTap={(event) => {
           event.cancelBubble = true;

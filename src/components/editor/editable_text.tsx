@@ -59,19 +59,15 @@ export function EditableText({
       setDraft(textarea.value);
       setIsEditing(false);
       setTextareaStyle(null);
-      textarea.remove();
     };
 
     const cancel = () => {
       setDraft(element.text);
       setIsEditing(false);
       setTextareaStyle(null);
-      textarea.remove();
     };
 
-    textarea.addEventListener("input", resize);
-    textarea.addEventListener("blur", finish);
-    textarea.addEventListener("keydown", (event) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
         cancel();
@@ -81,7 +77,11 @@ export function EditableText({
         event.preventDefault();
         finish();
       }
-    });
+    };
+
+    textarea.addEventListener("input", resize);
+    textarea.addEventListener("blur", finish);
+    textarea.addEventListener("keydown", handleKeyDown);
 
     document.body.appendChild(textarea);
 
@@ -94,7 +94,12 @@ export function EditableText({
     return () => {
       window.cancelAnimationFrame(frameId);
       textarea.removeEventListener("input", resize);
-      textarea.remove();
+      textarea.removeEventListener("blur", finish);
+      textarea.removeEventListener("keydown", handleKeyDown);
+
+      if (textarea.isConnected) {
+        textarea.remove();
+      }
     };
   }, [draft, element, isEditing, onChangeAction, textareaStyle]);
 
