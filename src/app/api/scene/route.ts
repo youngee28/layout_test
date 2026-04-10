@@ -65,16 +65,18 @@ function buildScenePrompt(csvText: string): string {
 
 function parseGeneratedScene(text: string): unknown {
   const normalized = text.trim();
-
   if (!normalized) {
     throw new Error("Gemini returned an empty response.");
   }
-
-  if (normalized.includes("```")) {
-    throw new Error("Gemini returned Markdown fences instead of plain JSON.");
+  const unfenced = unwrapMarkdownJsonFence(normalized);
+  return JSON.parse(unfenced);
+}
+function unwrapMarkdownJsonFence(text: string): string {
+  const fenced = text.match(/^(?:json)?\s*([\s\S]*?)\s*$/i);
+  if (fenced?.[1]) {
+    return fenced[1].trim();
   }
-
-  return JSON.parse(normalized);
+  return text;
 }
 
 function getCsvTextFromBody(body: unknown): string {
