@@ -56,7 +56,7 @@ async function writeSceneApiArtifacts(runId: string, artifacts: SceneApiLogArtif
     `${JSON.stringify(artifacts.requestPayload, null, 2)}\n`,
     "utf8",
   );
-  await writeFile(path.join(runDir, "response.txt"), `${artifacts.responseText}\n`, "utf8");
+  await writeFile(path.join(runDir, "response_raw.json"), `${artifacts.responseText}\n`, "utf8");
 }
 
 export function createSceneApiLogForGet({
