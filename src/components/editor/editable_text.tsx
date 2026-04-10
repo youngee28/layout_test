@@ -21,8 +21,8 @@ export function EditableText({
 }: EditableTextProps) {
   const textRef = useRef<Konva.Text>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
-  const [draft, setDraft] = useState(element.text);
-  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(element.text); // 타이핑 중인 임시 글자
+  const [isEditing, setIsEditing] = useState(false); // 수정 중인지 아닌지
   const [textareaStyle, setTextareaStyle] = useState<CSSProperties | null>(null);
 
   useEffect(() => {
@@ -59,15 +59,19 @@ export function EditableText({
       setDraft(textarea.value);
       setIsEditing(false);
       setTextareaStyle(null);
+      textarea.remove();
     };
 
     const cancel = () => {
       setDraft(element.text);
       setIsEditing(false);
       setTextareaStyle(null);
+      textarea.remove();
     };
 
-    const handleKeyDown = (event: KeyboardEvent) => {
+    textarea.addEventListener("input", resize);
+    textarea.addEventListener("blur", finish);
+    textarea.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         event.preventDefault();
         cancel();
@@ -77,11 +81,7 @@ export function EditableText({
         event.preventDefault();
         finish();
       }
-    };
-
-    textarea.addEventListener("input", resize);
-    textarea.addEventListener("blur", finish);
-    textarea.addEventListener("keydown", handleKeyDown);
+    });
 
     document.body.appendChild(textarea);
 
@@ -94,12 +94,7 @@ export function EditableText({
     return () => {
       window.cancelAnimationFrame(frameId);
       textarea.removeEventListener("input", resize);
-      textarea.removeEventListener("blur", finish);
-      textarea.removeEventListener("keydown", handleKeyDown);
-
-      if (textarea.isConnected) {
-        textarea.remove();
-      }
+      textarea.remove();
     };
   }, [draft, element, isEditing, onChangeAction, textareaStyle]);
 
@@ -154,7 +149,7 @@ export function EditableText({
         fill={resolveThemeValue(element.fill)}
         lineHeight={1.2}
         draggable
-        visible={!isEditing}
+        visible={!isEditing} // 실제 타이핑 할 수 있는 창
         onMouseDown={(event) => {
           event.cancelBubble = true;
           onSelectAction();
