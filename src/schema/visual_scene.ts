@@ -54,6 +54,79 @@ export type VisualScene = {
   elements: VisualElement[];
 };
 
+function isCssVariableToken(value: unknown): value is CssVariableToken {
+  return typeof value === "string" && value.startsWith("--");
+}
+
+function isVisualElement(value: unknown): value is VisualElement {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const element = value as Record<string, unknown>;
+
+  if (typeof element.id !== "string" || typeof element.x !== "number" || typeof element.y !== "number") {
+    return false;
+  }
+
+  if (element.type === "text") {
+    return (
+      typeof element.text === "string" &&
+      typeof element.width === "number" &&
+      typeof element.fontSize === "number" &&
+      typeof element.fontFamily === "string" &&
+      isCssVariableToken(element.fill) &&
+      (element.fontStyle === undefined || element.fontStyle === "normal" || element.fontStyle === "bold")
+    );
+  }
+
+  if (element.type === "rect") {
+    return (
+      typeof element.width === "number" &&
+      typeof element.height === "number" &&
+      isCssVariableToken(element.fill) &&
+      (element.stroke === undefined || isCssVariableToken(element.stroke)) &&
+      (element.strokeWidth === undefined || typeof element.strokeWidth === "number") &&
+      (element.cornerRadius === undefined || typeof element.cornerRadius === "number")
+    );
+  }
+
+  if (element.type === "line") {
+    return (
+      typeof element.width === "number" &&
+      isCssVariableToken(element.stroke) &&
+      typeof element.strokeWidth === "number"
+    );
+  }
+
+  if (element.type === "circle") {
+    return (
+      typeof element.radius === "number" &&
+      isCssVariableToken(element.fill) &&
+      (element.stroke === undefined || isCssVariableToken(element.stroke)) &&
+      (element.strokeWidth === undefined || typeof element.strokeWidth === "number")
+    );
+  }
+
+  return false;
+}
+
+export function isVisualScene(value: unknown): value is VisualScene {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const scene = value as Record<string, unknown>;
+
+  return (
+    typeof scene.width === "number" &&
+    typeof scene.height === "number" &&
+    isCssVariableToken(scene.background) &&
+    Array.isArray(scene.elements) &&
+    scene.elements.every(isVisualElement)
+  );
+}
+
 export const initialVisualScene = {
   width: 960,
   height: 560,

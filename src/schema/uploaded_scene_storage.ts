@@ -1,5 +1,4 @@
-import { normalizeScene } from "@/schema/normalize_scene";
-import type { VisualScene } from "@/schema/visual_scene";
+import { isVisualScene, type VisualScene } from "@/schema/visual_scene";
 
 const UPLOADED_SCENE_STORAGE_KEY = "uploaded-scene";
 
@@ -12,7 +11,11 @@ function getSessionStorage() {
 }
 
 export function stashUploadedScene(input: unknown): VisualScene {
-  const scene = normalizeScene(input);
+  if (!isVisualScene(input)) {
+    throw new Error("Uploaded scene payload is not a valid VisualScene.");
+  }
+
+  const scene = input;
   const storage = getSessionStorage();
 
   storage?.setItem(UPLOADED_SCENE_STORAGE_KEY, JSON.stringify(scene));
@@ -36,7 +39,9 @@ export function takeUploadedScene(): VisualScene | null {
   storage.removeItem(UPLOADED_SCENE_STORAGE_KEY);
 
   try {
-    return normalizeScene(JSON.parse(rawScene));
+    const parsedScene: unknown = JSON.parse(rawScene);
+
+    return isVisualScene(parsedScene) ? parsedScene : null;
   } catch {
     return null;
   }

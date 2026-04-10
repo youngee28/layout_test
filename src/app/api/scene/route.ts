@@ -9,6 +9,7 @@ import {
   writeSceneApiLogRequestAndText,
   writeSceneApiLogResponseJson,
 } from "@/app/api/scene/api_log";
+import { normalizeScene } from "@/schema/normalize_scene";
 
 loadEnv({ path: ".env.local", override: false });
 loadEnv({ path: ".env", override: false });
@@ -17,6 +18,44 @@ const PROJECT_ROOT = process.cwd();
 const INPUT_DIR = path.join(PROJECT_ROOT, "input");
 const CSV_PATH = path.join(INPUT_DIR, "data.csv");
 const DEFAULT_MODEL = "gemini-2.5-flash";
+const GENERATED_SCENE_SCHEMA = {
+  type: "object",
+  properties: {
+    width: { type: "number" },
+    height: { type: "number" },
+    background: { type: "string" },
+    elements: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          type: { type: "string", enum: ["text", "textbox", "label", "rect", "rectangle", "box", "line", "divider", "circle"] },
+          x: { type: "number" },
+          y: { type: "number" },
+          width: { type: "number" },
+          height: { type: "number" },
+          radius: { type: "number" },
+          text: { type: "string" },
+          fontSize: { type: "number" },
+          fontFamily: { type: "string" },
+          fontStyle: { type: "string", enum: ["normal", "bold"] },
+          fill: { type: "string" },
+          stroke: { type: "string" },
+          strokeWidth: { type: "number" },
+          cornerRadius: { type: "number" },
+          w: { type: "number" },
+          h: { type: "number" },
+          r: { type: "number" },
+          length: { type: "number" },
+          color: { type: "string" },
+        },
+        required: ["id", "type", "x", "y"],
+      },
+    },
+  },
+  required: ["width", "height", "background", "elements"],
+} as const;
 
 export const dynamic = "force-dynamic";
 
@@ -52,9 +91,8 @@ function buildScenePrompt(csvText: string): string {
   return [
     "You will receive raw CSV text.",
     "Infer the dataset structure from the CSV itself.",
-    "Return exactly one valid JSON object.",
-    "**Do not use Markdown fences.**",
-    "Output must match this scene shape:",
+    "Generate a scene object that matches the provided schema.",
+    "Output must represent this scene shape:",
     '{"width":210,"height":297,"background":"--surface-card","elements":[...]}',
     "Each element must have a type of text, rect, or line.",
     "Use only CSS variable tokens for colors, for example --text-primary, --accent, --accent-soft, --border-strong, --surface-card.",
@@ -74,15 +112,8 @@ function parseGeneratedScene(text: string): unknown {
   if (!normalized) {
     throw new Error("Gemini returned an empty response.");
   }
-  const unfenced = unwrapMarkdownJsonFence(normalized);
-  return JSON.parse(unfenced);
-}
-function unwrapMarkdownJsonFence(text: string): string {
-  const fenced = text.match(/^(?:json)?\s*([\s\S]*?)\s*$/i);
-  if (fenced?.[1]) {
-    return fenced[1].trim();
-  }
-  return text;
+
+  return JSON.parse(normalized);
 }
 
 function getCsvTextFromBody(body: unknown): string {
@@ -115,6 +146,10 @@ async function generateSceneFromCsv(csvText: string): Promise<GeneratedSceneResu
   const response = await ai.models.generateContent({
     model,
     contents: buildScenePrompt(csvText),
+    config: {
+      responseMimeType: "application/json",
+      responseJsonSchema: GENERATED_SCENE_SCHEMA,
+    },
   });
 
   const generatedText = response.text;
@@ -143,13 +178,14 @@ export async function GET() {
     });
 
     const responseJson = parseGeneratedScene(responseText);
+    const normalizedScene = normalizeScene(responseJson);
 
     await writeSceneApiLogResponseJson({
       runId: logContext.runId,
-      responseJson,
+      responseJson: normalizedScene,
     });
 
-    return NextResponse.json(responseJson);
+    return NextResponse.json(normalizedScene);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: message }, { status: 500 });
@@ -169,13 +205,14 @@ export async function POST(request: Request) {
     });
 
     const responseJson = parseGeneratedScene(responseText);
+    const normalizedScene = normalizeScene(responseJson);
 
     await writeSceneApiLogResponseJson({
       runId: logContext.runId,
-      responseJson,
+      responseJson: normalizedScene,
     });
 
-    return NextResponse.json(responseJson);
+    return NextResponse.json(normalizedScene);
   } catch (error: unknown) {
     const message =
       error instanceof SyntaxError

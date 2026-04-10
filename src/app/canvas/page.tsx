@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PreviewStage } from "@/components/editor/preview_stage";
-import { normalizeScene } from "@/schema/normalize_scene";
 import { takeUploadedScene } from "@/schema/uploaded_scene_storage";
-import type { VisualScene } from "@/schema/visual_scene";
+import { isVisualScene, type VisualScene } from "@/schema/visual_scene";
 
 export default function CanvasPage() {
   const [scene, setScene] = useState<VisualScene | null>(null);
@@ -47,7 +46,11 @@ export default function CanvasPage() {
           return;
         }
 
-        setScene(normalizeScene(data));
+        if (!isVisualScene(data)) {
+          throw new Error("Scene response was not a valid VisualScene.");
+        }
+
+        setScene(data);
         setStatus("ready");
         setErrorMessage(null);
         setSceneSource("development");
@@ -82,7 +85,7 @@ export default function CanvasPage() {
     }
 
     if (sceneSource === "upload") {
-      return "Scene loaded from the uploaded CSV and normalized before rendering.";
+      return "Scene loaded from the uploaded CSV response and validated before rendering.";
     }
   }, [errorMessage, sceneSource, status]);
 
