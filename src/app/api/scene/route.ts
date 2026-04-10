@@ -3,6 +3,12 @@ import { config as loadEnv } from "dotenv";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import {
+  createSceneApiLogForGet,
+  createSceneApiLogForPost,
+  writeSceneApiLogRequestAndText,
+  writeSceneApiLogResponseJson,
+} from "@/app/api/scene/api_log";
 
 loadEnv({ path: ".env.local", override: false });
 loadEnv({ path: ".env", override: false });
@@ -97,7 +103,11 @@ function getCsvTextFromBody(body: unknown): string {
   return csvText;
 }
 
-async function generateSceneFromCsv(csvText: string) {
+type GeneratedSceneResult = {
+  responseText: string;
+};
+
+async function generateSceneFromCsv(csvText: string): Promise<GeneratedSceneResult> {
   const apiKey = getApiKey();
   const model = process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
   const ai = new GoogleGenAI({ apiKey });
@@ -113,15 +123,33 @@ async function generateSceneFromCsv(csvText: string) {
     throw new Error("Gemini response did not include text output.");
   }
 
-  return parseGeneratedScene(generatedText);
+  return {
+    responseText: generatedText,
+  };
 }
 
 export async function GET() {
   try {
     const csvText = await readRequiredFile(CSV_PATH, "CSV input file");
-    const scene = await generateSceneFromCsv(csvText);
+    const logContext = createSceneApiLogForGet({
+      source: path.relative(PROJECT_ROOT, CSV_PATH),
+      csvText,
+    });
+    const { responseText } = await generateSceneFromCsv(csvText);
 
-    return NextResponse.json(scene);
+    await writeSceneApiLogRequestAndText({
+      ...logContext,
+      responseText,
+    });
+
+    const responseJson = parseGeneratedScene(responseText);
+
+    await writeSceneApiLogResponseJson({
+      runId: logContext.runId,
+      responseJson,
+    });
+
+    return NextResponse.json(responseJson);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: message }, { status: 500 });
@@ -132,9 +160,22 @@ export async function POST(request: Request) {
   try {
     const body: unknown = await request.json();
     const csvText = getCsvTextFromBody(body);
-    const scene = await generateSceneFromCsv(csvText);
+    const logContext = createSceneApiLogForPost({ body });
+    const { responseText } = await generateSceneFromCsv(csvText);
 
-    return NextResponse.json(scene);
+    await writeSceneApiLogRequestAndText({
+      ...logContext,
+      responseText,
+    });
+
+    const responseJson = parseGeneratedScene(responseText);
+
+    await writeSceneApiLogResponseJson({
+      runId: logContext.runId,
+      responseJson,
+    });
+
+    return NextResponse.json(responseJson);
   } catch (error: unknown) {
     const message =
       error instanceof SyntaxError

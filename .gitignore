@@ -4,6 +4,7 @@
 /input/data.csv
 /input/it_service_combined.csv
 /output/
+/log/
 
 # dependencies
 /node_modules
