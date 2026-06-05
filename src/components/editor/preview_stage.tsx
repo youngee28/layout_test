@@ -31,16 +31,6 @@ export function PreviewStage({ initialScene = initialVisualScene }: PreviewStage
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] px-4 py-3 shadow-[var(--shadow-soft)] backdrop-blur-xl">
-        <div>
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Canvas editor</p>
-          <p className="text-sm text-[var(--text-secondary)]">
-            Select, drag, resize, and double click the text to edit it.
-          </p>
-        </div>
-
-      </div>
-
       <div className="overflow-auto rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl">
         <div className="mx-auto w-max rounded-[calc(var(--radius-card)-0.25rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-3 shadow-[var(--shadow-neutral-soft)]">
           <Stage

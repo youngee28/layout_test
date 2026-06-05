@@ -98,28 +98,37 @@ export default function CanvasPage() {
 
       <div className="relative flex min-h-screen items-stretch justify-stretch">
         <main className="flex w-full flex-col gap-8 rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-shell)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:p-5 lg:p-6">
-          <header className="rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] px-5 py-8 sm:px-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent-text)]">
-              Canvas
-            </p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-[var(--text-primary)] sm:text-4xl">
-              캔버스 편집 테스트
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
-              {helperText}
-            </p>
-          </header>
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <div className="flex flex-col gap-8">
+              <header className="rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] px-5 py-8 sm:px-8">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent-text)]">
+                  Canvas
+                </p>
+                <h1 className="mt-3 text-3xl font-bold tracking-tight text-[var(--text-primary)] sm:text-4xl">
+                  캔버스 편집 테스트
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
+                  {helperText}
+                </p>
+              </header>
 
-          {scene ? (
-            <PreviewStage key={sceneKey} initialScene={scene} />
-          ) : (
-            <div className="rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-8 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-soft)] backdrop-blur-xl">
-              <p className="font-semibold text-[var(--text-primary)]">Scene unavailable</p>
-              <p className="mt-2 leading-7">
-                {errorMessage ?? "The scene could not be generated from the uploaded CSV or input/data.csv."}
-              </p>
+              <div className="flex-1 rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] min-h-[400px]">
+              </div>
             </div>
-          )}
+
+            <div>
+              {scene ? (
+                <PreviewStage key={sceneKey} initialScene={scene} />
+              ) : (
+                <div className="rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-8 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-soft)] backdrop-blur-xl">
+                  <p className="font-semibold text-[var(--text-primary)]">Scene unavailable</p>
+                  <p className="mt-2 leading-7">
+                    {errorMessage ?? "The scene could not be generated from the uploaded CSV or input/data.csv."}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </main>
       </div>
     </div>

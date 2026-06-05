@@ -1,4 +1,4 @@
-# Layout Test
+# CANVAS AI
 
 CSV 표 데이터를 업로드하면 Gemini로 인포그래픽용 씬 JSON을 생성하고, `/canvas`에서 바로 편집해볼 수 있는 Next.js 앱입니다.
 
@@ -14,7 +14,7 @@ CSV 표 데이터를 업로드하면 Gemini로 인포그래픽용 씬 JSON을 �
 
 - Node.js
 - pnpm, npm, yarn, 또는 bun
-- Gemini API key (`GEMINI_API_KEY` 또는 `GOOGLE_API_KEY`)
+- Gemini API key
 
 ## Environment variables
 
@@ -30,7 +30,7 @@ GEMINI_API_KEY=your_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
-지정하지 않으면 기본 모델은 `gemini-2.5-flash`입니다.
+ 기본 모델은 `gemini-2.5-flash`
 
 ## Getting started
 
