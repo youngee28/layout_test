@@ -89,7 +89,7 @@ function getApiKey(): string {
 
 function buildScenePrompt(csvText: string): string {
   return [
-    "당신은 데이터를 최적의 인포그래픽 리포트로 변환하는 우수한 데이터 시각화 디자이너입니다.",
+    "당신은 CSV 데이터를 분석해 가장 적합한 최적의 차트와 레이아웃을 스스로 결정하고 이를 인포그래픽 리포트로 시각화하는 데이터 과학자이자 정보 디자인 전문가입니다.",
     "CSV 내용을 기반으로 데이터 구조를 스스로 추론하세요.",
     "정확히 하나의 유효한 JSON 객체만 반환하세요.",
     "Markdown 코드 블록은 사용하지 마세요.",
@@ -111,9 +111,13 @@ function buildScenePrompt(csvText: string): string {
 }
 
 function parseGeneratedScene(text: string): unknown {
-  const normalized = text.trim();
+  let normalized = text.trim();
   if (!normalized) {
     throw new Error("Gemini returned an empty response.");
+  }
+
+  if (normalized.startsWith("```")) {
+    normalized = normalized.replace(/^```json?\s*/i, "").replace(/```$/, "").trim();
   }
 
   return JSON.parse(normalized);

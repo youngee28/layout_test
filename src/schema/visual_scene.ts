@@ -14,6 +14,7 @@ export type VisualTextElement = VisualElementBase & {
   fontFamily: CssVariableToken | string;
   fontStyle?: "normal" | "bold";
   fill: CssVariableToken;
+  align?: "left" | "center" | "right";
 };
 
 export type VisualRectElement = VisualElementBase & {
@@ -76,7 +77,8 @@ function isVisualElement(value: unknown): value is VisualElement {
       typeof element.fontSize === "number" &&
       typeof element.fontFamily === "string" &&
       isCssVariableToken(element.fill) &&
-      (element.fontStyle === undefined || element.fontStyle === "normal" || element.fontStyle === "bold")
+      (element.fontStyle === undefined || element.fontStyle === "normal" || element.fontStyle === "bold") &&
+      (element.align === undefined || element.align === "left" || element.align === "center" || element.align === "right")
     );
   }
 

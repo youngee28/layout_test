@@ -69,6 +69,7 @@ function normalizeText(raw: UnknownRecord): VisualTextElement {
     fontFamily: asString(raw.fontFamily, "--font-geist-sans"),
     fontStyle: raw.fontStyle === "bold" ? "bold" : "normal",
     fill: asToken(raw.fill ?? raw.color, "--text-primary"),
+    align: raw.align === "center" || raw.align === "right" ? raw.align : undefined,
   };
 }
 

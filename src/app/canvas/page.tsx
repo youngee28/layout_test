@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PreviewStage } from "@/components/editor/preview_stage";
+import { TextEditorPanel } from "@/components/editor/text_editor_panel";
 import { readUploadedScene } from "@/schema/uploaded_scene_storage";
-import { isVisualScene, type VisualScene } from "@/schema/visual_scene";
+import { type VisualElement, type VisualTextElement, isVisualScene, type VisualScene } from "@/schema/visual_scene";
 
 export default function CanvasPage() {
   const [scene, setScene] = useState<VisualScene | null>(null);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sceneSource, setSceneSource] = useState<"upload" | "development" | null>(null);
@@ -91,6 +93,40 @@ export default function CanvasPage() {
 
   const sceneKey = useMemo(() => (scene ? JSON.stringify(scene) : "empty-scene"), [scene]);
 
+  const handleChangeElement = useCallback((nextElement: VisualElement) => {
+    setScene((currentScene) => {
+      if (!currentScene) return currentScene;
+      return {
+        ...currentScene,
+        elements: currentScene.elements.map((element) =>
+          element.id === nextElement.id ? nextElement : element,
+        ),
+      };
+    });
+  }, []);
+
+  const selectedElement = scene?.elements.find((el) => el.id === selectedElementId) ?? null;
+  const selectedTextElement = selectedElement?.type === "text" ? selectedElement : null;
+
+  const handleTextChange = useCallback(
+    (nextElement: VisualTextElement) => {
+      handleChangeElement(nextElement);
+    },
+    [handleChangeElement],
+  );
+
+  const handleDeleteElement = useCallback(() => {
+    if (!selectedElementId || !scene) return;
+    setScene((currentScene) => {
+      if (!currentScene) return currentScene;
+      return {
+        ...currentScene,
+        elements: currentScene.elements.filter((el) => el.id !== selectedElementId),
+      };
+    });
+    setSelectedElementId(null);
+  }, [selectedElementId, scene]);
+
   return (
     <div className="relative isolate min-h-screen overflow-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-1 lg:py-1">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,var(--glow-hero),transparent_58%)]" />
@@ -100,7 +136,7 @@ export default function CanvasPage() {
         <main className="flex w-full flex-col gap-8 rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-shell)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:p-5 lg:p-6">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <div className="flex flex-col gap-8">
-              <header className="rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] px-5 py-8 sm:px-8">
+              <header className="rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] px-4 py-6 sm:px-8">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent-text)]">
                   Canvas
                 </p>
@@ -112,13 +148,27 @@ export default function CanvasPage() {
                 </p>
               </header>
 
-              <div className="flex-1 rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] min-h-[400px]">
+              <div className="flex flex-col gap-4 flex-1 rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] p-5 min-h-[400px]">
+                <div className="rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-4 w-[280px]">
+                  <TextEditorPanel
+                    element={selectedTextElement}
+                    onChange={handleTextChange}
+                    onDelete={handleDeleteElement}
+                  />
+                </div>
               </div>
             </div>
 
             <div>
               {scene ? (
-                <PreviewStage key={sceneKey} initialScene={scene} />
+                <PreviewStage
+                  key={sceneKey}
+                  scene={scene}
+                  selectedElementId={selectedElementId}
+                  onSelectElement={setSelectedElementId}
+                  onChangeElement={handleChangeElement}
+                  onClearSelection={() => setSelectedElementId(null)}
+                />
               ) : (
                 <div className="rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-8 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-soft)] backdrop-blur-xl">
                   <p className="font-semibold text-[var(--text-primary)]">Scene unavailable</p>

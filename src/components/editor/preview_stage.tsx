@@ -1,34 +1,28 @@
 "use client";
 
-import { useCallback, useState } from "react";
 import { Stage } from "react-konva";
 
 import { KonvaRenderer } from "@/components/editor/konva_renderer";
 import {
-  initialVisualScene,
   type VisualElement,
   type VisualScene,
 } from "@/schema/visual_scene";
 
 type PreviewStageProps = {
-  initialScene?: VisualScene;
+  scene: VisualScene;
+  selectedElementId: string | null;
+  onSelectElement: (elementId: string) => void;
+  onChangeElement: (element: VisualElement) => void;
+  onClearSelection: () => void;
 };
 
-export function PreviewStage({ initialScene = initialVisualScene }: PreviewStageProps) {
-  const [scene, setScene] = useState<VisualScene>(initialScene);
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(
-    initialScene.elements[0]?.id ?? null,
-  );
-
-  const handleChangeElement = useCallback((nextElement: VisualElement) => {
-    setScene((currentScene) => ({
-      ...currentScene,
-      elements: currentScene.elements.map((element) =>
-        element.id === nextElement.id ? nextElement : element,
-      ),
-    }));
-  }, []);
-
+export function PreviewStage({
+  scene,
+  selectedElementId,
+  onSelectElement,
+  onChangeElement,
+  onClearSelection,
+}: PreviewStageProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="overflow-auto rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl">
@@ -38,21 +32,21 @@ export function PreviewStage({ initialScene = initialVisualScene }: PreviewStage
             height={scene.height}
             onMouseDown={(event) => {
               if (event.target === event.target.getStage()) {
-                setSelectedElementId(null);
+                onClearSelection();
               }
             }}
             onTouchStart={(event) => {
               if (event.target === event.target.getStage()) {
-                setSelectedElementId(null);
+                onClearSelection();
               }
             }}
           >
             <KonvaRenderer
               scene={scene}
               selectedElementId={selectedElementId}
-              onSelectElementAction={setSelectedElementId}
-              onChangeElementAction={handleChangeElement}
-              onClearSelectionAction={() => setSelectedElementId(null)}
+              onSelectElementAction={onSelectElement}
+              onChangeElementAction={onChangeElement}
+              onClearSelectionAction={onClearSelection}
             />
           </Stage>
         </div>

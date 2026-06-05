@@ -1,7 +1,7 @@
 "use client";
 
 import Konva from "konva";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Text, Transformer } from "react-konva";
 
 import { resolveThemeValue, type VisualTextElement } from "@/schema/visual_scene";
@@ -21,9 +21,47 @@ export function EditableText({
 }: EditableTextProps) {
   const textRef = useRef<Konva.Text>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
-  const [draft, setDraft] = useState(element.text); // 타이핑 중인 임시 글자
-  const [isEditing, setIsEditing] = useState(false); // 수정 중인지 아닌지
+  const [draft, setDraft] = useState(element.text);
+  const [isEditing, setIsEditing] = useState(false);
   const [textareaStyle, setTextareaStyle] = useState<CSSProperties | null>(null);
+
+  const startEditing = useCallback(() => {
+    const node = textRef.current;
+    const stage = node?.getStage();
+
+    if (!node || !stage) {
+      return;
+    }
+
+    const containerRect = stage.container().getBoundingClientRect();
+    const position = node.getAbsoluteTransform().point({ x: 0, y: 0 });
+    const absoluteScale = node.getAbsoluteScale();
+
+    setDraft(element.text);
+    setTextareaStyle({
+      position: "fixed",
+      top: containerRect.top + position.y,
+      left: containerRect.left + position.x,
+      width: Math.max(120 * absoluteScale.x, node.width() * absoluteScale.x),
+      minHeight: node.height() * absoluteScale.y,
+      padding: `${8 * absoluteScale.y}px ${10 * absoluteScale.x}px`,
+      margin: 0,
+      border: "1px solid var(--border-strong)",
+      borderRadius: `${16 * absoluteScale.y}px`,
+      outline: "none",
+      resize: "none",
+      overflow: "hidden",
+      background: "var(--surface-card)",
+      color: "var(--text-primary)",
+      boxShadow: "var(--shadow-card)",
+      fontFamily: "var(--font-geist-sans), sans-serif",
+      fontSize: `${element.fontSize * absoluteScale.y}px`,
+      fontWeight: element.fontStyle === "bold" ? "700" : "400",
+      lineHeight: "1.2",
+      zIndex: 1000,
+    });
+    setIsEditing(true);
+  }, [element]);
 
   useEffect(() => {
     if (!isSelected || isEditing || !textRef.current || !transformerRef.current) {
@@ -98,8 +136,15 @@ export function EditableText({
       }
     };
 
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (event.target !== textarea) {
+        finish();
+      }
+    };
+
     textarea.addEventListener("input", resize);
     textarea.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleOutsideClick);
 
     document.body.appendChild(textarea);
 
@@ -113,6 +158,7 @@ export function EditableText({
       window.cancelAnimationFrame(frameId);
       textarea.removeEventListener("input", resize);
       textarea.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleOutsideClick);
 
       if (textarea.isConnected) {
         textarea.remove();
@@ -120,43 +166,30 @@ export function EditableText({
     };
   }, [draft, element, isEditing, onChangeAction, textareaStyle]);
 
-  const startEditing = () => {
-    const node = textRef.current;
-    const stage = node?.getStage();
-
-    if (!node || !stage) {
+  useEffect(() => {
+    if (!isSelected || isEditing) {
       return;
     }
 
-    const containerRect = stage.container().getBoundingClientRect();
-    const position = node.getAbsoluteTransform().point({ x: 0, y: 0 });
-    const absoluteScale = node.getAbsoluteScale();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
 
-    setDraft(element.text);
-    setTextareaStyle({
-      position: "fixed",
-      top: containerRect.top + position.y,
-      left: containerRect.left + position.x,
-      width: Math.max(120 * absoluteScale.x, node.width() * absoluteScale.x),
-      minHeight: node.height() * absoluteScale.y,
-      padding: `${8 * absoluteScale.y}px ${10 * absoluteScale.x}px`,
-      margin: 0,
-      border: "1px solid var(--border-strong)",
-      borderRadius: `${16 * absoluteScale.y}px`,
-      outline: "none",
-      resize: "none",
-      overflow: "hidden",
-      background: "var(--surface-card)",
-      color: "var(--text-primary)",
-      boxShadow: "var(--shadow-card)",
-      fontFamily: "var(--font-geist-sans), sans-serif",
-      fontSize: `${element.fontSize * absoluteScale.y}px`,
-      fontWeight: element.fontStyle === "bold" ? "700" : "400",
-      lineHeight: "1.2",
-      zIndex: 1000,
-    });
-    setIsEditing(true);
-  };
+      if (event.key === "Enter") {
+        event.preventDefault();
+        startEditing();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSelected, isEditing, startEditing]);
 
   return (
     <>
@@ -170,9 +203,10 @@ export function EditableText({
         fontStyle={element.fontStyle}
         fontFamily={resolveThemeValue(element.fontFamily, "sans-serif")}
         fill={resolveThemeValue(element.fill)}
+        align={element.align ?? "left"}
         lineHeight={1.2}
         draggable
-        visible={!isEditing} // 실제 타이핑 할 수 있는 창
+        visible={!isEditing}
         onMouseDown={(event) => {
           event.cancelBubble = true;
           onSelectAction();
