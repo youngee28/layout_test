@@ -72,8 +72,8 @@ export function EditableRect({
             return;
           }
 
-          const width = Math.max(48, node.width() * node.scaleX());
-          const height = Math.max(48, node.height() * node.scaleY());
+          const width = Math.max(1, node.width() * node.scaleX());
+          const height = Math.max(1, node.height() * node.scaleY());
 
           node.scaleX(1);
           node.scaleY(1);
@@ -97,7 +97,7 @@ export function EditableRect({
           anchorStroke={resolveThemeValue("--accent")}
           borderStroke={resolveThemeValue("--accent")}
           boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 48 || newBox.height < 48) {
+            if (newBox.width < 1 || newBox.height < 1) {
               return oldBox;
             }
 

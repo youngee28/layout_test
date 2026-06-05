@@ -89,7 +89,7 @@ function getApiKey(): string {
 
 function buildScenePrompt(csvText: string): string {
   return [
-    "당신은 원시 CSV 텍스트를 입력으로 받게 됩니다.",
+    "당신은 데이터를 최적의 인포그래픽 리포트로 변환하는 우수한 데이터 시각화 디자이너입니다.",
     "CSV 내용을 기반으로 데이터 구조를 스스로 추론하세요.",
     "정확히 하나의 유효한 JSON 객체만 반환하세요.",
     "Markdown 코드 블록은 사용하지 마세요.",

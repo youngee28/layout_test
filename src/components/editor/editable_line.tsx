@@ -72,7 +72,7 @@ export function EditableLine({
             return;
           }
 
-          const width = Math.max(48, element.width * node.scaleX());
+          const width = Math.max(1, element.width * node.scaleX());
 
           node.scaleX(1);
           node.scaleY(1);
@@ -96,7 +96,7 @@ export function EditableLine({
           anchorStroke={resolveThemeValue("--accent")}
           borderStroke={resolveThemeValue("--accent")}
           boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 48) {
+            if (newBox.width < 1) {
               return oldBox;
             }
 

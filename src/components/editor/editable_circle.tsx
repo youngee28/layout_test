@@ -70,7 +70,7 @@ export function EditableCircle({
             return;
           }
 
-          const radius = Math.max(24, element.radius * Math.max(node.scaleX(), node.scaleY()));
+          const radius = Math.max(0.5, element.radius * Math.max(node.scaleX(), node.scaleY()));
 
           node.scaleX(1);
           node.scaleY(1);
@@ -95,7 +95,7 @@ export function EditableCircle({
           anchorStroke={resolveThemeValue("--accent")}
           borderStroke={resolveThemeValue("--accent")}
           boundBoxFunc={(oldBox, newBox) => {
-            if (Math.min(newBox.width, newBox.height) < 48) {
+            if (Math.min(newBox.width, newBox.height) < 1) {
               return oldBox;
             }
 
