@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { Stage } from "react-konva";
 
 import { KonvaRenderer } from "@/components/editor/konva_renderer";
@@ -20,11 +20,6 @@ export function PreviewStage({ initialScene = initialVisualScene }: PreviewStage
     initialScene.elements[0]?.id ?? null,
   );
 
-  const selectedElement = useMemo(
-    () => scene.elements.find((element) => element.id === selectedElementId) ?? null,
-    [scene.elements, selectedElementId],
-  );
-
   const handleChangeElement = useCallback((nextElement: VisualElement) => {
     setScene((currentScene) => ({
       ...currentScene,
@@ -33,43 +28,6 @@ export function PreviewStage({ initialScene = initialVisualScene }: PreviewStage
       ),
     }));
   }, []);
-
-  const handleDeleteSelected = useCallback(() => {
-    setScene((currentScene) => {
-      if (!selectedElementId) {
-        return currentScene;
-      }
-
-      return {
-        ...currentScene,
-        elements: currentScene.elements.filter((element) => element.id !== selectedElementId),
-      };
-    });
-    setSelectedElementId(null);
-  }, [selectedElementId]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!selectedElementId) {
-        return;
-      }
-
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-
-      if (event.key === "Backspace" || event.key === "Delete") {
-        event.preventDefault();
-        handleDeleteSelected();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleDeleteSelected, selectedElementId]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -81,20 +39,6 @@ export function PreviewStage({ initialScene = initialVisualScene }: PreviewStage
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-secondary)]">
-            {selectedElement ? `${selectedElement.type} selected` : "No selection"}
-          </span>
-
-          <button
-            type="button"
-            onClick={handleDeleteSelected}
-            disabled={!selectedElement}
-            className="rounded-[var(--radius-pill)] border border-[var(--border-strong)] bg-[var(--surface-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] shadow-[var(--shadow-accent-soft)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Delete selected
-          </button>
-        </div>
       </div>
 
       <div className="overflow-auto rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl">

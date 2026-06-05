@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PreviewStage } from "@/components/editor/preview_stage";
-import { takeUploadedScene } from "@/schema/uploaded_scene_storage";
+import { readUploadedScene } from "@/schema/uploaded_scene_storage";
 import { isVisualScene, type VisualScene } from "@/schema/visual_scene";
 
 export default function CanvasPage() {
@@ -15,7 +15,7 @@ export default function CanvasPage() {
     let isMounted = true;
 
     async function loadScene() {
-      const uploadedScene = takeUploadedScene();
+      const uploadedScene = readUploadedScene();
 
       if (uploadedScene) {
         if (!isMounted) {
@@ -92,12 +92,12 @@ export default function CanvasPage() {
   const sceneKey = useMemo(() => (scene ? JSON.stringify(scene) : "empty-scene"), [scene]);
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+    <div className="relative isolate min-h-screen overflow-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-1 lg:py-1">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,var(--glow-hero),transparent_58%)]" />
       <div className="pointer-events-none absolute inset-y-20 right-0 w-72 bg-[radial-gradient(circle,var(--glow-side),transparent_66%)] blur-3xl" />
 
-      <div className="relative mx-auto flex min-h-[calc(100vh-2rem)] max-w-7xl items-center justify-center">
-        <main className="flex w-full max-w-6xl flex-col gap-8 rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-shell)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:p-5 lg:p-6">
+      <div className="relative flex min-h-screen items-stretch justify-stretch">
+        <main className="flex w-full flex-col gap-8 rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-shell)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:p-5 lg:p-6">
           <header className="rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] px-5 py-8 sm:px-8">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent-text)]">
               Canvas

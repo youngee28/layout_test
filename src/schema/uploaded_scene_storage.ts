@@ -23,7 +23,7 @@ export function stashUploadedScene(input: unknown): VisualScene {
   return scene;
 }
 
-export function takeUploadedScene(): VisualScene | null {
+export function readUploadedScene(): VisualScene | null {
   const storage = getSessionStorage();
 
   if (!storage) {
@@ -36,13 +36,19 @@ export function takeUploadedScene(): VisualScene | null {
     return null;
   }
 
-  storage.removeItem(UPLOADED_SCENE_STORAGE_KEY);
-
   try {
     const parsedScene: unknown = JSON.parse(rawScene);
 
-    return isVisualScene(parsedScene) ? parsedScene : null;
+    if (isVisualScene(parsedScene)) {
+      return parsedScene;
+    }
+
+    storage.removeItem(UPLOADED_SCENE_STORAGE_KEY);
+
+    return null;
   } catch {
+    storage.removeItem(UPLOADED_SCENE_STORAGE_KEY);
+
     return null;
   }
 }
