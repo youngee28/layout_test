@@ -11,6 +11,7 @@ export default function CanvasPage() {
   const [sceneHistory, setSceneHistory] = useState<VisualScene[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [pendingEditId, setPendingEditId] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sceneSource, setSceneSource] = useState<"upload" | "development" | null>(null);
@@ -155,6 +156,40 @@ export default function CanvasPage() {
     }
   }, [historyIndex, sceneHistory]);
 
+  const handleAddText = useCallback(() => {
+    if (!scene) return;
+    const newId = `text-${Date.now()}`;
+    const newText: VisualTextElement = {
+      id: newId,
+      type: "text",
+      x: Math.round(scene.width / 2 - 100),
+      y: Math.round(scene.height / 2 - 20),
+      text: "새 텍스트",
+      width: 200,
+      fontSize: 18,
+      fontFamily: "--font-geist-sans",
+      fontStyle: "normal",
+      fill: "--text-primary",
+    };
+    const nextScene = {
+      ...scene,
+      elements: [...scene.elements, newText],
+    };
+    setScene(nextScene);
+    setSceneHistory((prev) => {
+      const nextHistory = prev.slice(0, historyIndex + 1);
+      nextHistory.push(nextScene);
+      return nextHistory;
+    });
+    setHistoryIndex((prev) => prev + 1);
+    setSelectedElementId(newId);
+    setPendingEditId(newId);
+  }, [scene, historyIndex]);
+
+  const handleClearPendingEdit = useCallback(() => {
+    setPendingEditId(null);
+  }, []);
+
   return (
     <div className="relative isolate min-h-screen overflow-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-1 lg:py-1">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,var(--glow-hero),transparent_58%)]" />
@@ -184,6 +219,7 @@ export default function CanvasPage() {
                     onDelete={handleDeleteElement}
                     onUndo={handleUndo}
                     canUndo={historyIndex > 0}
+                    onAddText={handleAddText}
                   />
                 </div>
               </div>
@@ -198,6 +234,8 @@ export default function CanvasPage() {
                   onSelectElement={setSelectedElementId}
                   onChangeElement={handleChangeElement}
                   onClearSelection={() => setSelectedElementId(null)}
+                  pendingEditId={pendingEditId}
+                  onClearPendingEdit={handleClearPendingEdit}
                 />
               ) : (
                 <div className="rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-8 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-soft)] backdrop-blur-xl">

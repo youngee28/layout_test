@@ -18,6 +18,8 @@ type KonvaRendererProps = {
   onSelectElementAction: (elementId: string) => void;
   onChangeElementAction: (element: VisualElement) => void;
   onClearSelectionAction: () => void;
+  pendingEditId?: string | null;
+  onClearPendingEdit?: () => void;
 };
 
 export function KonvaRenderer({
@@ -26,6 +28,8 @@ export function KonvaRenderer({
   onSelectElementAction,
   onChangeElementAction,
   onClearSelectionAction,
+  pendingEditId,
+  onClearPendingEdit,
 }: KonvaRendererProps) {
   return (
     <Layer>
@@ -51,6 +55,8 @@ export function KonvaRenderer({
                 isSelected={isSelected}
                 onSelectAction={() => onSelectElementAction(element.id)}
                 onChangeAction={onChangeElementAction}
+                shouldAutoEdit={pendingEditId === element.id}
+                onClearPendingEdit={onClearPendingEdit}
               />
             );
 

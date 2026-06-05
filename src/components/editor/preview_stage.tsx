@@ -14,6 +14,8 @@ type PreviewStageProps = {
   onSelectElement: (elementId: string) => void;
   onChangeElement: (element: VisualElement) => void;
   onClearSelection: () => void;
+  pendingEditId?: string | null;
+  onClearPendingEdit?: () => void;
 };
 
 export function PreviewStage({
@@ -22,6 +24,8 @@ export function PreviewStage({
   onSelectElement,
   onChangeElement,
   onClearSelection,
+  pendingEditId,
+  onClearPendingEdit,
 }: PreviewStageProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -47,6 +51,8 @@ export function PreviewStage({
               onSelectElementAction={onSelectElement}
               onChangeElementAction={onChangeElement}
               onClearSelectionAction={onClearSelection}
+              pendingEditId={pendingEditId}
+              onClearPendingEdit={onClearPendingEdit}
             />
           </Stage>
         </div>

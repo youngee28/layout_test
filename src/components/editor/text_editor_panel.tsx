@@ -8,13 +8,23 @@ type TextEditorPanelProps = {
   onDelete?: () => void;
   onUndo?: () => void;
   canUndo?: boolean;
+  onAddText?: () => void;
 };
 
-export function TextEditorPanel({ element, onChange, onDelete, onUndo, canUndo }: TextEditorPanelProps) {
+export function TextEditorPanel({ element, onChange, onDelete, onUndo, canUndo, onAddText }: TextEditorPanelProps) {
   const disabled = !element;
 
   return (
     <div className="flex flex-col gap-6">
+      <button
+        className="w-full rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--accent)] bg-[var(--accent-soft)] px-4 py-2.5 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors"
+        onClick={() => {
+          if (onAddText) onAddText();
+        }}
+      >
+        + 텍스트 추가
+      </button>
+
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent-text)]">
           텍스트 속성

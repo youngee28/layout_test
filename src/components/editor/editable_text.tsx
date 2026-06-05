@@ -11,6 +11,8 @@ type EditableTextProps = {
   isSelected: boolean;
   onSelectAction: () => void;
   onChangeAction: (element: VisualTextElement) => void;
+  shouldAutoEdit?: boolean;
+  onClearPendingEdit?: () => void;
 };
 
 export function EditableText({
@@ -18,6 +20,8 @@ export function EditableText({
   isSelected,
   onSelectAction,
   onChangeAction,
+  shouldAutoEdit,
+  onClearPendingEdit,
 }: EditableTextProps) {
   const textRef = useRef<Konva.Text>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -190,6 +194,21 @@ export function EditableText({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isSelected, isEditing, startEditing]);
+
+  useEffect(() => {
+    if (!shouldAutoEdit || isEditing || !isSelected) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      startEditing();
+      if (onClearPendingEdit) {
+        onClearPendingEdit();
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [shouldAutoEdit, isSelected, isEditing, startEditing, onClearPendingEdit]);
 
   return (
     <>
