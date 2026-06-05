@@ -6,9 +6,11 @@ type TextEditorPanelProps = {
   element: VisualTextElement | null;
   onChange: (element: VisualTextElement) => void;
   onDelete?: () => void;
+  onUndo?: () => void;
+  canUndo?: boolean;
 };
 
-export function TextEditorPanel({ element, onChange, onDelete }: TextEditorPanelProps) {
+export function TextEditorPanel({ element, onChange, onDelete, onUndo, canUndo }: TextEditorPanelProps) {
   const disabled = !element;
 
   return (
@@ -225,15 +227,26 @@ export function TextEditorPanel({ element, onChange, onDelete }: TextEditorPanel
       </div> */}
 
       <div className="mt-auto pt-4 border-t border-[var(--border-subtle)]">
-        <button
-          disabled={disabled}
-          className="w-full rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-4 py-2.5 text-sm font-medium text-[var(--accent-text)] hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          onClick={() => {
-            if (onDelete) onDelete();
-          }}
-        >
-          삭제
-        </button>
+        <div className="flex gap-2">
+          <button
+            disabled={disabled}
+            className="flex-1 rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-2 text-xs font-medium text-[var(--accent-text)] hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={() => {
+              if (onDelete) onDelete();
+            }}
+          >
+            삭제
+          </button>
+          <button
+            disabled={!canUndo}
+            className="flex-1 rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--surface-accent)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={() => {
+              if (onUndo) onUndo();
+            }}
+          >
+            ↩ 되돌리기
+          </button>
+        </div>
       </div>
     </div>
   );

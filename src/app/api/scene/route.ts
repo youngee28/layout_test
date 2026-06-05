@@ -89,7 +89,7 @@ function getApiKey(): string {
 
 function buildScenePrompt(csvText: string): string {
   return [
-    "당신은 CSV 데이터를 분석해 가장 적합한 최적의 차트와 레이아웃을 스스로 결정하고 이를 인포그래픽 리포트로 시각화하는 데이터 과학자이자 정보 디자인 전문가입니다.",
+    "당신은 원시 CSV 데이터를 완벽하고 전문적인 인포그래픽 리포트(대시보드 씬)로 변환하는 우수한 데이터 시각화 및 정보 디자인 전문가입니다.",
     "CSV 내용을 기반으로 데이터 구조를 스스로 추론하세요.",
     "정확히 하나의 유효한 JSON 객체만 반환하세요.",
     "Markdown 코드 블록은 사용하지 마세요.",
@@ -179,7 +179,7 @@ export async function GET() {
     });
     const { responseText } = await generateSceneFromCsv(csvText);
 
-    await writeSceneApiLogRequestAndText({
+    void writeSceneApiLogRequestAndText({
       ...logContext,
       responseText,
     });
@@ -187,7 +187,7 @@ export async function GET() {
     const responseJson = parseGeneratedScene(responseText);
     const normalizedScene = normalizeScene(responseJson);
 
-    await writeSceneApiLogResponseJson({
+    void writeSceneApiLogResponseJson({
       runId: logContext.runId,
       responseJson: normalizedScene,
     });
@@ -206,7 +206,7 @@ export async function POST(request: Request) {
     const logContext = createSceneApiLogForPost({ body });
     const { responseText } = await generateSceneFromCsv(csvText);
 
-    await writeSceneApiLogRequestAndText({
+    void writeSceneApiLogRequestAndText({
       ...logContext,
       responseText,
     });
@@ -214,7 +214,7 @@ export async function POST(request: Request) {
     const responseJson = parseGeneratedScene(responseText);
     const normalizedScene = normalizeScene(responseJson);
 
-    await writeSceneApiLogResponseJson({
+    void writeSceneApiLogResponseJson({
       runId: logContext.runId,
       responseJson: normalizedScene,
     });

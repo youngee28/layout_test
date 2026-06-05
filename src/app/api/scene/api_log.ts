@@ -4,6 +4,8 @@ import path from "node:path";
 const PROJECT_ROOT = process.cwd();
 const API_LOG_DIR = path.join(PROJECT_ROOT, "log", "api");
 
+const isFileLoggingEnabled = process.env.VERCEL !== "1" && process.env.DISABLE_API_FILE_LOG !== "true";
+
 type SceneApiLogArtifacts = {
   requestPayload: unknown;
   responseText: string;
@@ -49,14 +51,23 @@ async function ensureRunDirectory(runId: string): Promise<string> {
 }
 
 async function writeSceneApiArtifacts(runId: string, artifacts: SceneApiLogArtifacts): Promise<void> {
-  const runDir = await ensureRunDirectory(runId);
+  if (!isFileLoggingEnabled) {
+    return;
+  }
 
-  await writeFile(
-    path.join(runDir, "request.json"),
-    `${JSON.stringify(artifacts.requestPayload, null, 2)}\n`,
-    "utf8",
-  );
-  await writeFile(path.join(runDir, "response_raw.json"), `${artifacts.responseText}\n`, "utf8");
+  try {
+    const runDir = await ensureRunDirectory(runId);
+
+    await writeFile(
+      path.join(runDir, "request.json"),
+      `${JSON.stringify(artifacts.requestPayload, null, 2)}\n`,
+      "utf8",
+    );
+    await writeFile(path.join(runDir, "response_raw.json"), `${artifacts.responseText}\n`, "utf8");
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[API_LOG] Failed to write artifacts for ${runId}: ${message}`);
+  }
 }
 
 export function createSceneApiLogForGet({
@@ -105,6 +116,10 @@ export async function writeSceneApiLogResponseJson({
   runId,
   responseJson,
 }: WriteSceneApiLogResponseJsonInput): Promise<void> {
+  if (!isFileLoggingEnabled) {
+    return;
+  }
+
   try {
     const runDir = await ensureRunDirectory(runId);
 
@@ -115,6 +130,6 @@ export async function writeSceneApiLogResponseJson({
     );
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`Failed to write scene API JSON response log: ${message}`);
+    console.error(`[API_LOG] Failed to write response JSON for ${runId}: ${message}`);
   }
 }

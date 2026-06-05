@@ -8,6 +8,8 @@ import { type VisualElement, type VisualTextElement, isVisualScene, type VisualS
 
 export default function CanvasPage() {
   const [scene, setScene] = useState<VisualScene | null>(null);
+  const [sceneHistory, setSceneHistory] = useState<VisualScene[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -25,6 +27,8 @@ export default function CanvasPage() {
         }
 
         setScene(uploadedScene);
+        setSceneHistory([uploadedScene]);
+        setHistoryIndex(0);
         setStatus("ready");
         setErrorMessage(null);
         setSceneSource("upload");
@@ -53,6 +57,8 @@ export default function CanvasPage() {
         }
 
         setScene(data);
+        setSceneHistory([data]);
+        setHistoryIndex(0);
         setStatus("ready");
         setErrorMessage(null);
         setSceneSource("development");
@@ -96,14 +102,21 @@ export default function CanvasPage() {
   const handleChangeElement = useCallback((nextElement: VisualElement) => {
     setScene((currentScene) => {
       if (!currentScene) return currentScene;
-      return {
+      const nextScene = {
         ...currentScene,
         elements: currentScene.elements.map((element) =>
           element.id === nextElement.id ? nextElement : element,
         ),
       };
+      setSceneHistory((prev) => {
+        const nextHistory = prev.slice(0, historyIndex + 1);
+        nextHistory.push(nextScene);
+        return nextHistory;
+      });
+      setHistoryIndex((prev) => prev + 1);
+      return nextScene;
     });
-  }, []);
+  }, [historyIndex]);
 
   const selectedElement = scene?.elements.find((el) => el.id === selectedElementId) ?? null;
   const selectedTextElement = selectedElement?.type === "text" ? selectedElement : null;
@@ -119,13 +132,28 @@ export default function CanvasPage() {
     if (!selectedElementId || !scene) return;
     setScene((currentScene) => {
       if (!currentScene) return currentScene;
-      return {
+      const nextScene = {
         ...currentScene,
         elements: currentScene.elements.filter((el) => el.id !== selectedElementId),
       };
+      setSceneHistory((prev) => {
+        const nextHistory = prev.slice(0, historyIndex + 1);
+        nextHistory.push(nextScene);
+        return nextHistory;
+      });
+      setHistoryIndex((prev) => prev + 1);
+      return nextScene;
     });
     setSelectedElementId(null);
-  }, [selectedElementId, scene]);
+  }, [selectedElementId, scene, historyIndex]);
+
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      const prevIndex = historyIndex - 1;
+      setHistoryIndex(prevIndex);
+      setScene(sceneHistory[prevIndex]);
+    }
+  }, [historyIndex, sceneHistory]);
 
   return (
     <div className="relative isolate min-h-screen overflow-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-1 lg:py-1">
@@ -154,6 +182,8 @@ export default function CanvasPage() {
                     element={selectedTextElement}
                     onChange={handleTextChange}
                     onDelete={handleDeleteElement}
+                    onUndo={handleUndo}
+                    canUndo={historyIndex > 0}
                   />
                 </div>
               </div>
