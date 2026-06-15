@@ -1,11 +1,9 @@
-"use client";
-
 import { Layer, Rect } from "react-konva";
 
-import { EditableCircle } from "@/components/editor/editable_circle";
-import { EditableLine } from "@/components/editor/editable_line";
-import { EditableRect } from "@/components/editor/editable_rect";
-import { EditableText } from "@/components/editor/editable_text";
+import { EditableCircle } from "@/components/canvas/editor/editable_circle";
+import { EditableLine } from "@/components/canvas/editor/editable_line";
+import { EditableRect } from "@/components/canvas/editor/editable_rect";
+import { EditableText } from "@/components/canvas/editor/editable_text";
 import {
   resolveThemeValue,
   type VisualElement,
@@ -19,7 +17,7 @@ type KonvaRendererProps = {
   onChangeElementAction: (element: VisualElement) => void;
   onClearSelectionAction: () => void;
   pendingEditId?: string | null;
-  onClearPendingEdit?: () => void;
+  onClearPendingEditAction?: () => void;
 };
 
 export function KonvaRenderer({
@@ -29,7 +27,7 @@ export function KonvaRenderer({
   onChangeElementAction,
   onClearSelectionAction,
   pendingEditId,
-  onClearPendingEdit,
+  onClearPendingEditAction,
 }: KonvaRendererProps) {
   return (
     <Layer>
@@ -56,7 +54,7 @@ export function KonvaRenderer({
                 onSelectAction={() => onSelectElementAction(element.id)}
                 onChangeAction={onChangeElementAction}
                 shouldAutoEdit={pendingEditId === element.id}
-                onClearPendingEdit={onClearPendingEdit}
+                onClearPendingEditAction={onClearPendingEditAction}
               />
             );
 

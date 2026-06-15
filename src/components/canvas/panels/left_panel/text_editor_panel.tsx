@@ -1,5 +1,3 @@
-"use client";
-
 import { type CssVariableToken, type VisualTextElement } from "@/schema/visual_scene";
 
 type TextEditorPanelProps = {

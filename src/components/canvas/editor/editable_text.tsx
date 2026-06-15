@@ -12,7 +12,7 @@ type EditableTextProps = {
   onSelectAction: () => void;
   onChangeAction: (element: VisualTextElement) => void;
   shouldAutoEdit?: boolean;
-  onClearPendingEdit?: () => void;
+  onClearPendingEditAction?: () => void;
 };
 
 export function EditableText({
@@ -21,7 +21,7 @@ export function EditableText({
   onSelectAction,
   onChangeAction,
   shouldAutoEdit,
-  onClearPendingEdit,
+  onClearPendingEditAction,
 }: EditableTextProps) {
   const textRef = useRef<Konva.Text>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -202,13 +202,13 @@ export function EditableText({
 
     const timer = setTimeout(() => {
       startEditing();
-      if (onClearPendingEdit) {
-        onClearPendingEdit();
+      if (onClearPendingEditAction) {
+        onClearPendingEditAction();
       }
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [shouldAutoEdit, isSelected, isEditing, startEditing, onClearPendingEdit]);
+  }, [shouldAutoEdit, isSelected, isEditing, startEditing, onClearPendingEditAction]);
 
   return (
     <>

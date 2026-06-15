@@ -88,12 +88,15 @@ function getApiKey(): string {
 }
 
 function buildScenePrompt(csvText: string): string {
+  // [핵심] 호출할 때마다 완전히 다른 문자열을 생성하여 Google 서버 캐싱을 무력화
+  const randomSeed = Math.random().toString(36).substring(2, 11);
+  
   return [
-    "당신은 원시 CSV 데이터를 완벽하고 전문적인 인포그래픽 리포트(대시보드 씬)로 변환하는 우수한 데이터 시각화 및 정보 디자인 전문가입니다.",
+    "당신은 원시 CSV 데이터를 완벽하고 전문적인 인포그래픽 리포트(대시보드 씬)로 변환하는 우수한 데이터 시각화 디자인 전문가입니다.",
     "CSV 내용을 기반으로 데이터 구조를 스스로 추론하세요.",
     "정확히 하나의 유효한 JSON 객체만 반환하세요.",
     "Markdown 코드 블록은 사용하지 마세요.",
-    "출력은 반드시 아래와 같은 씬 구조를 따라야 합니다:",
+    "출력은 아래의 JSON 데이터 스키마 형식만 준수하되, 내부 요소의 배치와 디자인 구조는 데이터에 맞게 완전히 새롭게 창조하세요.",
     "{'width':600,'height':848,'background':'--surface-card','elements':[...]}",
     "모든 요소는 'width':600,'height':848 영역을 벗어나면 안됩니다.",
     "각 요소의 type은 반드시 text, rect, line, circle 중 하나여야 합니다.",
@@ -107,6 +110,9 @@ function buildScenePrompt(csvText: string): string {
     "<csv>",
     csvText,
     "</csv>",
+
+    // [원천 차단] 프롬프트 맨 마지막에 유니크한 시드값 주입 (구글 캐시 우회용)
+    `\n[System Management Info - Bypass Cache Seed: ${randomSeed}]`    
   ].join("\n");
 }
 

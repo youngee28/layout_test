@@ -1,8 +1,6 @@
-"use client";
-
 import { Stage } from "react-konva";
 
-import { KonvaRenderer } from "@/components/editor/konva_renderer";
+import { KonvaRenderer } from "@/components/canvas/editor/konva_renderer";
 import {
   type VisualElement,
   type VisualScene,
@@ -15,7 +13,7 @@ type PreviewStageProps = {
   onChangeElement: (element: VisualElement) => void;
   onClearSelection: () => void;
   pendingEditId?: string | null;
-  onClearPendingEdit?: () => void;
+  onClearPendingEditAction?: () => void;
 };
 
 export function PreviewStage({
@@ -25,7 +23,7 @@ export function PreviewStage({
   onChangeElement,
   onClearSelection,
   pendingEditId,
-  onClearPendingEdit,
+  onClearPendingEditAction,
 }: PreviewStageProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -52,7 +50,7 @@ export function PreviewStage({
               onChangeElementAction={onChangeElement}
               onClearSelectionAction={onClearSelection}
               pendingEditId={pendingEditId}
-              onClearPendingEdit={onClearPendingEdit}
+              onClearPendingEditAction={onClearPendingEditAction}
             />
           </Stage>
         </div>
