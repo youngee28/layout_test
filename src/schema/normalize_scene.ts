@@ -1,6 +1,8 @@
 import {
   type VisualCircleElement,
   type CssVariableToken,
+  type VisualElementDataRef,
+  type VisualElementRole,
   type VisualElement,
   type VisualLineElement,
   type VisualRectElement,
@@ -37,6 +39,62 @@ function asToken(value: unknown, fallback: CssVariableToken): CssVariableToken {
   return fallback;
 }
 
+function asBoolean(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined;
+}
+
+function asRole(value: unknown): VisualElementRole | undefined {
+  if (
+    value === "title" ||
+    value === "chartTitle" ||
+    value === "chartBackground" ||
+    value === "dataMark" ||
+    value === "dataLabel" ||
+    value === "axis" ||
+    value === "grid" ||
+    value === "legend" ||
+    value === "annotation" ||
+    value === "decoration"
+  ) {
+    return value;
+  }
+
+  return undefined;
+}
+
+function asDataRef(value: unknown): VisualElementDataRef | undefined {
+  const raw = asRecord(value);
+
+  if (!raw) {
+    return undefined;
+  }
+
+  const rowKey = typeof raw.rowKey === "string" ? raw.rowKey : undefined;
+  const field = typeof raw.field === "string" ? raw.field : undefined;
+  const dataValue = typeof raw.value === "string" || typeof raw.value === "number" ? raw.value : undefined;
+
+  if (rowKey === undefined && field === undefined && dataValue === undefined) {
+    return undefined;
+  }
+
+  return {
+    rowKey,
+    field,
+    value: dataValue,
+  };
+}
+
+function getSharedElementFields(raw: UnknownRecord) {
+  return {
+    role: asRole(raw.role),
+    chartId: typeof raw.chartId === "string" ? raw.chartId : undefined,
+    groupId: typeof raw.groupId === "string" ? raw.groupId : undefined,
+    dataRef: asDataRef(raw.dataRef),
+    editable: asBoolean(raw.editable),
+    locked: asBoolean(raw.locked),
+  };
+}
+
 function normalizeType(value: unknown): VisualElement["type"] | null {
   if (value === "text" || value === "textbox" || value === "label") {
     return "text";
@@ -59,6 +117,7 @@ function normalizeType(value: unknown): VisualElement["type"] | null {
 
 function normalizeText(raw: UnknownRecord): VisualTextElement {
   return {
+    ...getSharedElementFields(raw),
     id: asString(raw.id, createId("text")),
     type: "text",
     x: asNumber(raw.x, 64),
@@ -75,6 +134,7 @@ function normalizeText(raw: UnknownRecord): VisualTextElement {
 
 function normalizeRect(raw: UnknownRecord): VisualRectElement {
   return {
+    ...getSharedElementFields(raw),
     id: asString(raw.id, createId("rect")),
     type: "rect",
     x: asNumber(raw.x, 64),
@@ -89,12 +149,16 @@ function normalizeRect(raw: UnknownRecord): VisualRectElement {
 }
 
 function normalizeLine(raw: UnknownRecord): VisualLineElement {
+  const rawPoints = Array.isArray(raw.points) ? raw.points.filter((point): point is number => typeof point === "number") : undefined;
+
   return {
+    ...getSharedElementFields(raw),
     id: asString(raw.id, createId("line")),
     type: "line",
     x: asNumber(raw.x, 64),
     y: asNumber(raw.y, 260),
     width: asNumber(raw.width ?? raw.w ?? raw.length, 220),
+    points: rawPoints && rawPoints.length >= 4 ? rawPoints : undefined,
     stroke: asToken(raw.stroke, "--accent"),
     strokeWidth: asNumber(raw.strokeWidth, 4),
   };
@@ -102,6 +166,7 @@ function normalizeLine(raw: UnknownRecord): VisualLineElement {
 
 function normalizeCircle(raw: UnknownRecord): VisualCircleElement {
   return {
+    ...getSharedElementFields(raw),
     id: asString(raw.id, createId("circle")),
     type: "circle",
     x: asNumber(raw.x, 720),

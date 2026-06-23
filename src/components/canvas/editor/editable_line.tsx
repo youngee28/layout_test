@@ -21,6 +21,8 @@ export function EditableLine({
 }: EditableLineProps) {
   const shapeRef = useRef<Konva.Line>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const points = element.points ?? [0, 0, element.width, 0];
+  const canTransformWidthOnly = element.points === undefined;
 
   useEffect(() => {
     if (!isSelected || !shapeRef.current || !transformerRef.current) {
@@ -37,7 +39,7 @@ export function EditableLine({
         ref={shapeRef}
         x={element.x}
         y={element.y}
-        points={[0, 0, element.width, 0]}
+        points={points}
         stroke={resolveThemeValue(element.stroke)}
         strokeWidth={element.strokeWidth}
         lineCap="round"
@@ -66,6 +68,24 @@ export function EditableLine({
           });
         }}
         onTransformEnd={() => {
+          if (!canTransformWidthOnly) {
+            const node = shapeRef.current;
+
+            if (!node) {
+              return;
+            }
+
+            node.scaleX(1);
+            node.scaleY(1);
+
+            onChangeAction({
+              ...element,
+              x: node.x(),
+              y: node.y(),
+            });
+            return;
+          }
+
           const node = shapeRef.current;
 
           if (!node) {
@@ -91,12 +111,12 @@ export function EditableLine({
           ref={transformerRef}
           rotateEnabled={false}
           flipEnabled={false}
-          enabledAnchors={["middle-left", "middle-right"]}
+          enabledAnchors={canTransformWidthOnly ? ["middle-left", "middle-right"] : []}
           anchorFill={resolveThemeValue("--surface-card")}
           anchorStroke={resolveThemeValue("--accent")}
           borderStroke={resolveThemeValue("--accent")}
           boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 1) {
+            if (canTransformWidthOnly && newBox.width < 1) {
               return oldBox;
             }
 

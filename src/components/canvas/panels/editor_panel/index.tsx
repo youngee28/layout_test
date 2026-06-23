@@ -1,7 +1,7 @@
 import { type VisualTextElement } from "@/schema/visual_scene";
 import { TextEditorPanel } from "./text_editor_panel";
 
-type LeftPanelProps = {
+type EditorPanelProps = {
   selectedTextElement: VisualTextElement | null;
   onChange: (element: VisualTextElement) => void;
   onDelete: () => void;
@@ -10,14 +10,14 @@ type LeftPanelProps = {
   onAddText: () => void;
 };
 
-export function LeftPanel({
+export function EditorPanel({
   selectedTextElement,
   onChange,
   onDelete,
   onUndo,
   canUndo,
   onAddText,
-}: LeftPanelProps) {
+}: EditorPanelProps) {
   return (
     <section className="flex min-h-[400px] flex-col gap-4 rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] p-5">
       <div>

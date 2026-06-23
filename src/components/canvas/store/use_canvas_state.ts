@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { readUploadedScene } from "@/schema/uploaded_scene_storage";
+import type { ChartRecommendation } from "@/schema/chart_recommendation";
+import type { ResolvedTable } from "@/schema/resolved_table";
+import { readUploadedScenePayload, isCanvasScenePayload } from "@/schema/uploaded_scene_storage";
 import {
   isVisualScene,
   type VisualElement,
@@ -12,6 +14,8 @@ import {
 
 export function useCanvasState() {
   const [scene, setScene] = useState<VisualScene | null>(null);
+  const [resolvedTables, setResolvedTables] = useState<ResolvedTable[]>([]);
+  const [chartRecommendations, setChartRecommendations] = useState<ChartRecommendation[]>([]);
   const [sceneHistory, setSceneHistory] = useState<VisualScene[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
@@ -24,15 +28,17 @@ export function useCanvasState() {
     let isMounted = true;
 
     async function loadScene() {
-      const uploadedScene = readUploadedScene();
+      const uploadedPayload = readUploadedScenePayload();
 
-      if (uploadedScene) {
+      if (uploadedPayload) {
         if (!isMounted) {
           return;
         }
 
-        setScene(uploadedScene);
-        setSceneHistory([uploadedScene]);
+        setScene(uploadedPayload.scene);
+        setResolvedTables(uploadedPayload.resolvedTables ?? []);
+        setChartRecommendations(uploadedPayload.chartRecommendations ?? []);
+        setSceneHistory([uploadedPayload.scene]);
         setHistoryIndex(0);
         setStatus("ready");
         setErrorMessage(null);
@@ -57,12 +63,20 @@ export function useCanvasState() {
           return;
         }
 
-        if (!isVisualScene(data)) {
-          throw new Error("Scene response was not a valid VisualScene.");
+        const payload = isCanvasScenePayload(data)
+          ? data
+          : isVisualScene(data)
+            ? { scene: data }
+            : null;
+
+        if (!payload) {
+          throw new Error("Scene response was not a valid payload.");
         }
 
-        setScene(data);
-        setSceneHistory([data]);
+        setScene(payload.scene);
+        setResolvedTables(payload.resolvedTables ?? []);
+        setChartRecommendations(payload.chartRecommendations ?? []);
+        setSceneHistory([payload.scene]);
         setHistoryIndex(0);
         setStatus("ready");
         setErrorMessage(null);
@@ -75,6 +89,8 @@ export function useCanvasState() {
         const message = error instanceof Error ? error.message : "Failed to load scene.";
 
         setScene(null);
+        setResolvedTables([]);
+        setChartRecommendations([]);
         setStatus("error");
         setErrorMessage(message);
         setSceneSource(null);
@@ -100,6 +116,8 @@ export function useCanvasState() {
     if (sceneSource === "upload") {
       return "Scene loaded from the uploaded CSV response and validated before rendering.";
     }
+
+    return "Scene loaded from the development CSV source.";
   }, [errorMessage, sceneSource, status]);
 
   const sceneKey = useMemo(() => (scene ? JSON.stringify(scene) : "empty-scene"), [scene]);
@@ -196,8 +214,11 @@ export function useCanvasState() {
 
   return {
     scene,
+    resolvedTables,
+    chartRecommendations,
     sceneKey,
     selectedElementId,
+    selectedElement,
     selectedTextElement,
     pendingEditId,
     errorMessage,
