@@ -15,23 +15,8 @@ export function CanvasLayout() {
 
       <div className="relative flex flex-1 min-h-0 items-stretch justify-stretch">
         <main className="flex w-full flex-col gap-8 rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-shell)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:p-5 lg:p-6 h-full overflow-hidden">
-          {/* 주석 처리된 헤더 유지 */}
-          {/* <header className="rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] px-4 py-4 sm:px-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent-text)]">
-              Canvas
-            </p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight text-[var(--text-primary)] sm:text-4xl">
-              캔버스 편집 테스트
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
-              {canvasState.helperText}
-            </p>
-          </header> */}
-
-
-          <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[1fr_800px_1fr] min-h-0">
+          <div className="grid flex-1 min-h-0 grid-cols-1 gap-6 lg:grid-cols-[1fr_800px_1fr]">
             <InspectorPanel
-              selectedElement={canvasState.selectedElement}
               resolvedTables={canvasState.resolvedTables}
               chartRecommendations={canvasState.chartRecommendations}
             />
