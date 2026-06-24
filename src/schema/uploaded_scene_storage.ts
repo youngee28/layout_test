@@ -1,14 +1,18 @@
 import type { ChartRecommendation } from "@/schema/chart_recommendation";
 import { isChartRecommendation } from "@/schema/chart_recommendation";
+import type { DashboardCandidate } from "@/schema/dashboard_candidate";
+import { isDashboardCandidate } from "@/schema/dashboard_candidate";
 import type { ResolvedTable } from "@/schema/resolved_table";
 import { isVisualScene, type VisualScene } from "@/schema/visual_scene";
 
 const UPLOADED_SCENE_STORAGE_KEY = "uploaded-scene";
 
 export type CanvasScenePayload = {
-  scene: VisualScene;
+  scene?: VisualScene;
   resolvedTables?: ResolvedTable[];
   chartRecommendations?: ChartRecommendation[];
+  dashboardCandidates?: DashboardCandidate[];
+  generationStage?: "candidates" | "ready";
 };
 
 function getSessionStorage() {
@@ -45,7 +49,9 @@ export function isCanvasScenePayload(input: unknown): input is CanvasScenePayloa
 
   const payload = input as Record<string, unknown>;
 
-  if (!isVisualScene(payload.scene)) {
+  const sceneValid = payload.scene === undefined || isVisualScene(payload.scene);
+
+  if (!sceneValid) {
     return false;
   }
 
@@ -57,14 +63,23 @@ export function isCanvasScenePayload(input: unknown): input is CanvasScenePayloa
     payload.chartRecommendations === undefined ||
     (Array.isArray(payload.chartRecommendations) && payload.chartRecommendations.every(isChartRecommendation));
 
-  return resolvedTablesValid && chartRecommendationsValid;
+  const dashboardCandidatesValid =
+    payload.dashboardCandidates === undefined ||
+    (Array.isArray(payload.dashboardCandidates) && payload.dashboardCandidates.every(isDashboardCandidate));
+
+  const generationStageValid =
+    payload.generationStage === undefined ||
+    payload.generationStage === "candidates" ||
+    payload.generationStage === "ready";
+
+  return sceneValid && resolvedTablesValid && chartRecommendationsValid && dashboardCandidatesValid && generationStageValid;
 }
 
 export function stashUploadedScene(input: unknown): CanvasScenePayload {
   const payload = isCanvasScenePayload(input)
     ? input
     : isVisualScene(input)
-      ? { scene: input }
+      ? { scene: input, generationStage: "ready" as const }
       : null;
 
   if (!payload) {
@@ -98,11 +113,11 @@ export function readUploadedScenePayload(): CanvasScenePayload | null {
     }
 
     if (isVisualScene(parsed)) {
-      return { scene: parsed };
+      return { scene: parsed, generationStage: "ready" as const };
     }
 
     if (typeof parsed === "object" && parsed !== null && "scene" in parsed && isVisualScene((parsed as Record<string, unknown>).scene)) {
-      return { scene: (parsed as { scene: VisualScene }).scene };
+      return { scene: (parsed as { scene: VisualScene }).scene, generationStage: "ready" as const };
     }
 
     storage.removeItem(UPLOADED_SCENE_STORAGE_KEY);

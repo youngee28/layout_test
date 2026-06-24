@@ -7,19 +7,21 @@ type TextEditorPanelProps = {
   onUndo?: () => void;
   canUndo?: boolean;
   onAddText?: () => void;
+  disableEditing?: boolean;
 };
 
-export function TextEditorPanel({ element, onChange, onDelete, onUndo, canUndo, onAddText }: TextEditorPanelProps) {
-  const disabled = !element;
+export function TextEditorPanel({ element, onChange, onDelete, onUndo, canUndo, onAddText, disableEditing = false }: TextEditorPanelProps) {
+  const disabled = !element || disableEditing;
 
   return (
     <div className="flex flex-col gap-6">
-      <button
-        className="w-full rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--accent)] bg-[var(--accent-soft)] px-4 py-2.5 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors"
-        onClick={() => {
-          if (onAddText) onAddText();
-        }}
-      >
+        <button
+          disabled={disableEditing}
+          className="w-full rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--accent)] bg-[var(--accent-soft)] px-4 py-2.5 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors"
+          onClick={() => {
+            if (onAddText) onAddText();
+          }}
+        >
         + 텍스트 추가
       </button>
 

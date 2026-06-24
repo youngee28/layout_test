@@ -8,6 +8,8 @@ type EditorPanelProps = {
   onUndo: () => void;
   canUndo: boolean;
   onAddText: () => void;
+  sceneAvailable: boolean;
+  generationStage: "candidates" | "ready";
 };
 
 export function EditorPanel({
@@ -17,6 +19,8 @@ export function EditorPanel({
   onUndo,
   canUndo,
   onAddText,
+  sceneAvailable,
+  generationStage,
 }: EditorPanelProps) {
   return (
     <section className="flex min-h-[400px] flex-col gap-4 rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] p-5">
@@ -30,6 +34,11 @@ export function EditorPanel({
       </div>
 
       <div className="rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-4">
+        {!sceneAvailable && generationStage === "candidates" ? (
+          <p className="mb-4 rounded-[calc(var(--radius-card)-0.5rem)] border border-dashed border-[var(--border-subtle)] bg-[var(--surface-panel)] px-3 py-2 text-xs leading-6 text-[var(--text-secondary)]">
+            최종 인포그래픽 장면이 아직 없어 편집 기능은 잠시 비활성화됩니다.
+          </p>
+        ) : null}
         <TextEditorPanel
           element={selectedTextElement}
           onChange={onChange}
@@ -37,6 +46,7 @@ export function EditorPanel({
           onUndo={onUndo}
           canUndo={canUndo}
           onAddText={onAddText}
+          disableEditing={!sceneAvailable}
         />
       </div>
     </section>

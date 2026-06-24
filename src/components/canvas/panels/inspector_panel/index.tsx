@@ -3,14 +3,21 @@
 import { useMemo, useState } from "react";
 
 import type { ChartRecommendation } from "@/schema/chart_recommendation";
+import type {
+  DashboardCandidate as DashboardPlanningCandidate,
+  DashboardCandidateBlock,
+  DashboardCandidatePreviewBlock,
+  DashboardCandidatePreviewIcon,
+} from "@/schema/dashboard_candidate";
 import type { ResolvedTable } from "@/schema/resolved_table";
 
 type InspectorPanelProps = {
   resolvedTables: ResolvedTable[];
   chartRecommendations: ChartRecommendation[];
+  dashboardCandidates?: DashboardPlanningCandidate[];
 };
 
-type DashboardCandidate = {
+type DashboardCandidateCard = {
   id: string;
   title: string;
   summary: string;
@@ -18,6 +25,11 @@ type DashboardCandidate = {
   blockCount: number;
   chartTypes: string[];
   fields: string[];
+  goal?: string;
+  narrative?: string;
+  layoutStrategy?: string;
+  viewpoints?: string[];
+  thumbnailCandidate?: DashboardPlanningCandidate;
   blocks: Array<{
     id: string;
     title: string;
@@ -182,7 +194,7 @@ function DashboardCandidateSelector({
   selectedCandidateId,
   onSelect,
 }: {
-  candidates: DashboardCandidate[];
+  candidates: DashboardCandidateCard[];
   selectedCandidateId: string | null;
   onSelect: (candidateId: string) => void;
 }) {
@@ -211,8 +223,8 @@ function DashboardCandidateSelector({
                 {candidate.blockCount} blocks
               </span>
             </div>
+            {candidate.thumbnailCandidate ? <DashboardCandidateThumbnail candidate={candidate.thumbnailCandidate} /> : null}
             <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{candidate.summary}</p>
-            <p className="mt-3 text-[11px] font-medium text-[var(--text-secondary)]">기준 데이터: {candidate.tableLabel}</p>
           </button>
         );
       })}
@@ -220,54 +232,172 @@ function DashboardCandidateSelector({
   );
 }
 
-function DashboardSummaryPanel({ candidate }: { candidate: DashboardCandidate }) {
+function getPreviewIcon(block: DashboardCandidateBlock): DashboardCandidatePreviewIcon {
+  if (block.type === "metric" || block.chartType === "kpi") return "kpi";
+  if (block.type === "text" || block.type === "note") return "text";
+  if (block.chartType === "line") return "line";
+  if (block.chartType === "area") return "area";
+  if (block.chartType === "pie") return "pie";
+  if (block.chartType === "donut") return "donut";
+  if (block.chartType === "scatter") return "scatter";
+  if (block.chartType === "rankingBar") return "rankingBar";
+  return "bar";
+}
+
+function getPreviewLabel(block: DashboardCandidateBlock): string {
+  return block.title.trim().slice(0, 12) || "블록";
+}
+
+function getPreviewHeadline(candidate: DashboardPlanningCandidate): string {
+  return candidate.preview?.headline ?? candidate.title;
+}
+
+function getPreviewBlocks(candidate: DashboardPlanningCandidate): DashboardCandidatePreviewBlock[] {
+  const previewBlocks = candidate.preview?.blocks ?? [];
+
+  if (previewBlocks.length > 0) {
+    return previewBlocks;
+  }
+
+  return candidate.blocks.map((block) => ({
+    id: block.id,
+    previewLabel: getPreviewLabel(block),
+    previewIcon: getPreviewIcon(block),
+    role: block.role,
+    x: block.layout.x,
+    y: block.layout.y,
+    width: block.layout.width,
+    height: block.layout.height,
+  }));
+}
+
+function getPreviewPalette(previewIcon: DashboardCandidatePreviewIcon, role: DashboardCandidatePreviewBlock["role"]) {
+  if (role === "hero") {
+    return {
+      panel: "bg-[linear-gradient(180deg,var(--accent-soft),var(--surface-panel))]",
+      accent: "bg-[var(--accent)]/80",
+      text: "text-[var(--accent)]",
+    };
+  }
+
+  if (previewIcon === "kpi") {
+    return {
+      panel: "bg-[var(--surface-panel)]",
+      accent: "bg-emerald-500/70",
+      text: "text-emerald-700 dark:text-emerald-300",
+    };
+  }
+
+  if (previewIcon === "line" || previewIcon === "area") {
+    return {
+      panel: "bg-sky-500/8",
+      accent: "bg-sky-500/70",
+      text: "text-sky-700 dark:text-sky-300",
+    };
+  }
+
+  if (previewIcon === "pie" || previewIcon === "donut") {
+    return {
+      panel: "bg-fuchsia-500/8",
+      accent: "bg-fuchsia-500/70",
+      text: "text-fuchsia-700 dark:text-fuchsia-300",
+    };
+  }
+
+  if (previewIcon === "scatter") {
+    return {
+      panel: "bg-violet-500/8",
+      accent: "bg-violet-500/70",
+      text: "text-violet-700 dark:text-violet-300",
+    };
+  }
+
+  if (previewIcon === "text" || previewIcon === "table") {
+    return {
+      panel: "bg-amber-500/8",
+      accent: "bg-amber-500/70",
+      text: "text-amber-700 dark:text-amber-300",
+    };
+  }
+
+  return {
+    panel: "bg-indigo-500/8",
+    accent: "bg-indigo-500/70",
+    text: "text-indigo-700 dark:text-indigo-300",
+  };
+}
+
+function PreviewGlyph({ previewIcon }: { previewIcon: DashboardCandidatePreviewIcon }) {
+  if (previewIcon === "kpi") {
+    return <div className="flex gap-1"><div className="h-2 w-2 rounded-full bg-current" /><div className="h-2 w-6 rounded-full bg-current/70" /></div>;
+  }
+
+  if (previewIcon === "line" || previewIcon === "area") {
+    return <div className="flex h-5 items-end gap-[3px]">{[35, 60, 45, 80, 55].map((height, index) => <div key={`${previewIcon}-${index}`} className="w-1 rounded-full bg-current" style={{ height: `${height}%` }} />)}</div>;
+  }
+
+  if (previewIcon === "pie" || previewIcon === "donut") {
+    return <div className="h-5 w-5 rounded-full border-[4px] border-current/35 border-r-current" />;
+  }
+
+  if (previewIcon === "scatter") {
+    return <div className="relative h-5 w-6">{[[2, 14], [8, 8], [14, 12], [18, 4]].map(([left, top], index) => <span key={`scatter-${index}`} className="absolute h-1.5 w-1.5 rounded-full bg-current" style={{ left, top }} />)}</div>;
+  }
+
+  if (previewIcon === "table") {
+    return <div className="grid h-5 w-6 grid-cols-3 gap-[2px]">{Array.from({ length: 6 }).map((_, index) => <div key={`table-${index}`} className="rounded-[2px] bg-current/75" />)}</div>;
+  }
+
+  if (previewIcon === "text") {
+    return <div className="flex flex-col gap-[3px]"><div className="h-1.5 w-7 rounded-full bg-current" /><div className="h-1.5 w-5 rounded-full bg-current/70" /></div>;
+  }
+
+  return <div className="flex h-5 items-end gap-[3px]">{[50, 80, 45, 65].map((height, index) => <div key={`${previewIcon}-${index}`} className="w-1.5 rounded-t-sm bg-current" style={{ height: `${height}%` }} />)}</div>;
+}
+
+function DashboardCandidateThumbnail({ candidate }: { candidate: DashboardPlanningCandidate }) {
+  const previewBlocks = getPreviewBlocks(candidate);
+  const previewHeadline = getPreviewHeadline(candidate);
+
   return (
-    <div className="space-y-4">
-      <section className="rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">선택된 대시보드 요약</p>
-        <h3 className="mt-2 text-lg font-bold tracking-tight text-[var(--text-primary)]">{candidate.title}</h3>
-        <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{candidate.summary}</p>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-[calc(var(--radius-card)-0.75rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">주요 구성 블록</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--text-primary)]">{candidate.blocks.map((block) => block.title).join(", ") || "구성 블록 정보 없음"}</p>
+    <div className="relative mt-4 overflow-hidden rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-3 shadow-[var(--shadow-neutral-soft)]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-[radial-gradient(circle_at_top,var(--glow-hero),transparent_70%)] opacity-60" />
+      <div className="relative aspect-[3/4] rounded-[calc(var(--radius-card)-0.75rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-2">
+        <div className="h-full rounded-[calc(var(--radius-card)-0.875rem)] bg-[var(--surface-panel)] p-2">
+          <div className="mb-2 rounded-[calc(var(--radius-card)-1rem)] border border-[var(--border-subtle)] bg-[var(--accent-soft)]/70 px-3 py-2">
+            <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">{previewHeadline}</p>
           </div>
-          <div className="rounded-[calc(var(--radius-card)-0.75rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">사용 차트 유형</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--text-primary)]">{candidate.chartTypes.join(", ") || "표시 가능한 차트 유형 없음"}</p>
-          </div>
-          <div className="rounded-[calc(var(--radius-card)-0.75rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-3 sm:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">사용 데이터 필드</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--text-primary)]">{candidate.fields.join(", ") || "필드 정보 없음"}</p>
-          </div>
-        </div>
-      </section>
+          <div className="relative h-[calc(100%-2.25rem)]">
+            {previewBlocks.map((block) => {
+              const palette = getPreviewPalette(block.previewIcon, block.role);
 
-      <section className="rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">생성된 블록 목록</p>
-          <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">현재 repo에서 안정적으로 지원하는 KPI, line chart, bar chart, rankingBar 유형만 표시합니다.</p>
-        </div>
-
-        <div className="mt-4 flex flex-col gap-3">
-          {candidate.blocks.map((block) => (
-            <article key={block.id} className="rounded-[calc(var(--radius-card)-0.75rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-4 py-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{block.title}</p>
-                  <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-[var(--accent-text)]">{block.chartType}</p>
+              return (
+              <div
+                key={block.id}
+                className={`absolute overflow-hidden rounded-[0.7rem] border border-[var(--border-subtle)] ${palette.panel}`}
+                style={{
+                  left: `${block.x}%`,
+                  top: `${block.y}%`,
+                  width: `${block.width}%`,
+                  height: `${block.height}%`,
+                }}
+              >
+                <div className="flex h-full flex-col justify-between p-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className={`min-w-0 ${palette.text}`}>
+                      <p className="truncate text-[9px] font-bold uppercase tracking-[0.12em]">{block.previewIcon}</p>
+                      <p className="mt-1 truncate text-[10px] font-semibold text-[var(--text-primary)]">{block.previewLabel}</p>
+                    </div>
+                  </div>
+                  <div className={`mt-2 flex min-h-0 flex-1 items-end justify-start ${palette.text}`}>
+                    <PreviewGlyph previewIcon={block.previewIcon} />
+                  </div>
                 </div>
-                <span className="rounded-full border border-[var(--border-subtle)] bg-[var(--surface-panel)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)]">
-                  {block.fields.length} fields
-                </span>
               </div>
-              <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{block.message}</p>
-              <p className="mt-2 text-xs leading-5 text-[var(--text-primary)]">사용 데이터 필드: {block.fields.join(", ") || "필드 정보 없음"}</p>
-            </article>
-          ))}
+            );})}
+          </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
@@ -301,9 +431,9 @@ function DashboardPanel({ resolvedTables, chartRecommendations }: { resolvedTabl
           chartTypes,
           fields,
           blocks,
-        } satisfies DashboardCandidate;
+        } satisfies DashboardCandidateCard;
       })
-      .filter((candidate): candidate is DashboardCandidate => candidate !== null)
+      .filter((candidate): candidate is DashboardCandidateCard => candidate !== null)
       .slice(0, 3);
   }, [chartRecommendations, resolvedTables]);
 
@@ -335,14 +465,91 @@ function DashboardPanel({ resolvedTables, chartRecommendations }: { resolvedTabl
       </div>
 
       <DashboardCandidateSelector candidates={candidates} selectedCandidateId={selectedCandidate?.id ?? null} onSelect={setSelectedCandidateId} />
-
-      {selectedCandidate ? <DashboardSummaryPanel candidate={selectedCandidate} /> : null}
     </div>
   );
 }
 
-export function InspectorPanel({ resolvedTables, chartRecommendations }: InspectorPanelProps) {
-  const [activeTab, setActiveTab] = useState<"finalData" | "dashboard">("finalData");
+function DashboardCandidatePanel({ dashboardCandidates }: { dashboardCandidates: DashboardPlanningCandidate[] }) {
+  const candidates = useMemo(() => {
+    return dashboardCandidates.map((candidate) => {
+      const fields = Array.from(
+        new Set(
+          candidate.blocks.flatMap((block) => [
+            block.dataBinding?.categoryField,
+            block.dataBinding?.valueField,
+            block.dataBinding?.dateField,
+            block.dataBinding?.groupField,
+          ].filter((field): field is string => Boolean(field))),
+        ),
+      );
+      const chartTypes = Array.from(new Set(candidate.blocks.flatMap((block) => (block.chartType ? [block.chartType] : []))));
+
+        return {
+          id: candidate.id,
+          title: candidate.title,
+          summary: candidate.summary,
+          tableLabel: candidate.sourceTableIds.join(", ") || "연결 표 정보 없음",
+          blockCount: candidate.blocks.length,
+        chartTypes,
+        fields,
+        blocks: candidate.blocks.map((block) => ({
+          id: block.id,
+          title: block.title,
+          chartType: block.chartType ?? block.type,
+          message: block.description ?? `${block.role} · ${block.priority}`,
+          fields: [
+            block.dataBinding?.categoryField,
+            block.dataBinding?.valueField,
+            block.dataBinding?.dateField,
+            block.dataBinding?.groupField,
+          ].filter((field): field is string => Boolean(field)),
+        })),
+        goal: candidate.goal,
+        narrative: candidate.narrative,
+        layoutStrategy: candidate.layoutStrategy,
+        viewpoints: candidate.viewpoints,
+        thumbnailCandidate: candidate,
+      } satisfies DashboardCandidateCard;
+    });
+  }, [dashboardCandidates]);
+
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(candidates[0]?.id ?? null);
+
+  const selectedCandidate = useMemo(() => {
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    return candidates.find((candidate) => candidate.id === selectedCandidateId) ?? candidates[0] ?? null;
+  }, [candidates, selectedCandidateId]);
+
+  if (candidates.length === 0) {
+    return (
+      <EmptyPanel
+        title="생성된 대시보드 후보가 없습니다"
+        description="인포그래픽 방향 후보를 아직 만들지 못했습니다. 다시 업로드하거나 데이터를 확인해 주세요."
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">대시보드 후보</p>
+        <p className="text-sm leading-6 text-[var(--text-secondary)]">
+          AI가 표 데이터를 바탕으로 잡은 인포그래픽 방향 후보입니다.
+        </p>
+      </div>
+
+      <DashboardCandidateSelector candidates={candidates} selectedCandidateId={selectedCandidate?.id ?? null} onSelect={setSelectedCandidateId} />
+    </div>
+  );
+}
+
+export function InspectorPanel({ resolvedTables, chartRecommendations, dashboardCandidates }: InspectorPanelProps) {
+  const [activeTab, setActiveTab] = useState<"finalData" | "dashboard">(
+    dashboardCandidates && dashboardCandidates.length > 0 ? "dashboard" : "finalData",
+  );
 
   return (
     <aside className="flex min-h-[400px] flex-col gap-4 rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] p-5">
@@ -380,7 +587,9 @@ export function InspectorPanel({ resolvedTables, chartRecommendations }: Inspect
         {activeTab === "finalData" ? (
           <FinalDataPanel resolvedTables={resolvedTables} />
         ) : (
-          <DashboardPanel resolvedTables={resolvedTables} chartRecommendations={chartRecommendations} />
+          dashboardCandidates && dashboardCandidates.length > 0
+            ? <DashboardCandidatePanel dashboardCandidates={dashboardCandidates} />
+            : <DashboardPanel resolvedTables={resolvedTables} chartRecommendations={chartRecommendations} />
         )}
       </div>
     </aside>

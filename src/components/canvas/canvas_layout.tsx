@@ -19,6 +19,7 @@ export function CanvasLayout() {
             <InspectorPanel
               resolvedTables={canvasState.resolvedTables}
               chartRecommendations={canvasState.chartRecommendations}
+              dashboardCandidates={canvasState.dashboardCandidates}
             />
             <CenterPanel
               scene={canvasState.scene}
@@ -26,6 +27,7 @@ export function CanvasLayout() {
               selectedElementId={canvasState.selectedElementId}
               pendingEditId={canvasState.pendingEditId}
               errorMessage={canvasState.errorMessage}
+              generationStage={canvasState.generationStage}
               onSelectElement={canvasState.setSelectedElementId}
               onChangeElement={canvasState.handleChangeElement}
               onClearSelection={() => canvasState.setSelectedElementId(null)}
@@ -38,6 +40,8 @@ export function CanvasLayout() {
               onUndo={canvasState.handleUndo}
               canUndo={canvasState.canUndo}
               onAddText={canvasState.handleAddText}
+              sceneAvailable={Boolean(canvasState.scene)}
+              generationStage={canvasState.generationStage}
             />
           </div>
         </main>

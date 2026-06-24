@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { ChartRecommendation } from "@/schema/chart_recommendation";
+import type { DashboardCandidate } from "@/schema/dashboard_candidate";
 import type { ResolvedTable } from "@/schema/resolved_table";
 import { readUploadedScenePayload, isCanvasScenePayload } from "@/schema/uploaded_scene_storage";
 import {
@@ -16,6 +17,7 @@ export function useCanvasState() {
   const [scene, setScene] = useState<VisualScene | null>(null);
   const [resolvedTables, setResolvedTables] = useState<ResolvedTable[]>([]);
   const [chartRecommendations, setChartRecommendations] = useState<ChartRecommendation[]>([]);
+  const [dashboardCandidates, setDashboardCandidates] = useState<DashboardCandidate[]>([]);
   const [sceneHistory, setSceneHistory] = useState<VisualScene[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
@@ -23,6 +25,7 @@ export function useCanvasState() {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sceneSource, setSceneSource] = useState<"upload" | "development" | null>(null);
+  const [generationStage, setGenerationStage] = useState<"candidates" | "ready">("ready");
 
   useEffect(() => {
     let isMounted = true;
@@ -35,14 +38,16 @@ export function useCanvasState() {
           return;
         }
 
-        setScene(uploadedPayload.scene);
+        setScene(uploadedPayload.scene ?? null);
         setResolvedTables(uploadedPayload.resolvedTables ?? []);
         setChartRecommendations(uploadedPayload.chartRecommendations ?? []);
-        setSceneHistory([uploadedPayload.scene]);
-        setHistoryIndex(0);
+        setDashboardCandidates(uploadedPayload.dashboardCandidates ?? []);
+        setSceneHistory(uploadedPayload.scene ? [uploadedPayload.scene] : []);
+        setHistoryIndex(uploadedPayload.scene ? 0 : -1);
         setStatus("ready");
         setErrorMessage(null);
         setSceneSource("upload");
+        setGenerationStage(uploadedPayload.generationStage ?? (uploadedPayload.scene ? "ready" : "candidates"));
         return;
       }
 
@@ -66,21 +71,23 @@ export function useCanvasState() {
         const payload = isCanvasScenePayload(data)
           ? data
           : isVisualScene(data)
-            ? { scene: data }
+            ? { scene: data, generationStage: "ready" as const }
             : null;
 
         if (!payload) {
           throw new Error("Scene response was not a valid payload.");
         }
 
-        setScene(payload.scene);
+        setScene(payload.scene ?? null);
         setResolvedTables(payload.resolvedTables ?? []);
         setChartRecommendations(payload.chartRecommendations ?? []);
-        setSceneHistory([payload.scene]);
-        setHistoryIndex(0);
+        setDashboardCandidates(payload.dashboardCandidates ?? []);
+        setSceneHistory(payload.scene ? [payload.scene] : []);
+        setHistoryIndex(payload.scene ? 0 : -1);
         setStatus("ready");
         setErrorMessage(null);
         setSceneSource("development");
+        setGenerationStage(payload.generationStage ?? "ready");
       } catch (error) {
         if (!isMounted) {
           return;
@@ -91,9 +98,11 @@ export function useCanvasState() {
         setScene(null);
         setResolvedTables([]);
         setChartRecommendations([]);
+        setDashboardCandidates([]);
         setStatus("error");
         setErrorMessage(message);
         setSceneSource(null);
+        setGenerationStage("ready");
       }
     }
 
@@ -113,12 +122,16 @@ export function useCanvasState() {
       return errorMessage ?? "Scene loading failed.";
     }
 
+    if (generationStage === "candidates") {
+      return "Infographic-oriented dashboard candidates loaded. Pick a direction before generating the final canvas scene.";
+    }
+
     if (sceneSource === "upload") {
       return "Scene loaded from the uploaded CSV response and validated before rendering.";
     }
 
     return "Scene loaded from the development CSV source.";
-  }, [errorMessage, sceneSource, status]);
+  }, [errorMessage, generationStage, sceneSource, status]);
 
   const sceneKey = useMemo(() => (scene ? JSON.stringify(scene) : "empty-scene"), [scene]);
 
@@ -216,6 +229,8 @@ export function useCanvasState() {
     scene,
     resolvedTables,
     chartRecommendations,
+    dashboardCandidates,
+    generationStage,
     sceneKey,
     selectedElementId,
     selectedElement,

@@ -7,6 +7,7 @@ type CenterPanelProps = {
   selectedElementId: string | null;
   pendingEditId: string | null;
   errorMessage: string | null;
+  generationStage: "candidates" | "ready";
   onSelectElement: (elementId: string) => void;
   onChangeElement: (element: VisualElement) => void;
   onClearSelection: () => void;
@@ -19,6 +20,7 @@ export function CenterPanel({
   selectedElementId,
   pendingEditId,
   errorMessage,
+  generationStage,
   onSelectElement,
   onChangeElement,
   onClearSelection,
@@ -39,9 +41,13 @@ export function CenterPanel({
         />
       ) : (
         <div className="rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-8 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-soft)] backdrop-blur-xl">
-          <p className="font-semibold text-[var(--text-primary)]">Scene unavailable</p>
+          <p className="font-semibold text-[var(--text-primary)]">
+            {generationStage === "candidates" ? "후보 구성이 준비되었습니다" : "Scene unavailable"}
+          </p>
           <p className="mt-2 leading-7">
-            {errorMessage ?? "The scene could not be generated from the uploaded CSV or input/data.csv."}
+            {generationStage === "candidates"
+              ? "좌측 대시보드 탭에서 인포그래픽 방향의 후보를 먼저 비교해 주세요. 이 단계에서는 아직 최종 캔버스 장면을 생성하지 않습니다."
+              : errorMessage ?? "The scene could not be generated from the uploaded CSV or input/data.csv."}
           </p>
         </div>
       )}

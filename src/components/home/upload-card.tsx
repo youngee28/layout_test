@@ -47,7 +47,7 @@ export function UploadCard() {
         throw new Error("업로드한 CSV 파일이 비어 있습니다.");
       }
 
-      const response = await fetch("/api/scene", {
+      const response = await fetch("/api/dashboard-candidates", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -124,8 +124,8 @@ export function UploadCard() {
             </p>
             <p className="mx-auto max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
               {isLoading
-                ? "CSV를 읽고 장면을 생성하는 중입니다. 완료되면 캔버스로 이동합니다."
-                : "클릭해서 CSV 파일을 선택하면 장면을 생성한 뒤 바로 편집기로 이동합니다."}
+                ? "CSV를 읽고 인포그래픽 후보 구성을 생성하는 중입니다. 완료되면 캔버스로 이동합니다."
+                : "클릭해서 CSV 파일을 선택하면 인포그래픽 방향의 대시보드 후보를 만든 뒤 캔버스로 이동합니다."}
             </p>
           </div>
 
