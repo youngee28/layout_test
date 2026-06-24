@@ -1,33 +1,9 @@
 export type CssVariableToken = `--${string}`;
 
-export type VisualElementRole =
-  | "title"
-  | "chartTitle"
-  | "chartBackground"
-  | "dataMark"
-  | "dataLabel"
-  | "axis"
-  | "grid"
-  | "legend"
-  | "annotation"
-  | "decoration";
-
-export type VisualElementDataRef = {
-  rowKey?: string;
-  field?: string;
-  value?: number | string;
-};
-
 type VisualElementBase = {
   id: string;
   x: number;
   y: number;
-  role?: VisualElementRole;
-  chartId?: string;
-  groupId?: string;
-  dataRef?: VisualElementDataRef;
-  editable?: boolean;
-  locked?: boolean;
 };
 
 export type VisualTextElement = VisualElementBase & {
@@ -54,7 +30,6 @@ export type VisualRectElement = VisualElementBase & {
 export type VisualLineElement = VisualElementBase & {
   type: "line";
   width: number;
-  points?: number[];
   stroke: CssVariableToken;
   strokeWidth: number;
 };
@@ -84,35 +59,6 @@ function isCssVariableToken(value: unknown): value is CssVariableToken {
   return typeof value === "string" && value.startsWith("--");
 }
 
-function isVisualElementRole(value: unknown): value is VisualElementRole {
-  return (
-    value === "title" ||
-    value === "chartTitle" ||
-    value === "chartBackground" ||
-    value === "dataMark" ||
-    value === "dataLabel" ||
-    value === "axis" ||
-    value === "grid" ||
-    value === "legend" ||
-    value === "annotation" ||
-    value === "decoration"
-  );
-}
-
-function isVisualElementDataRef(value: unknown): value is VisualElementDataRef {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const dataRef = value as Record<string, unknown>;
-
-  return (
-    (dataRef.rowKey === undefined || typeof dataRef.rowKey === "string") &&
-    (dataRef.field === undefined || typeof dataRef.field === "string") &&
-    (dataRef.value === undefined || typeof dataRef.value === "string" || typeof dataRef.value === "number")
-  );
-}
-
 function isVisualElement(value: unknown): value is VisualElement {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -121,17 +67,6 @@ function isVisualElement(value: unknown): value is VisualElement {
   const element = value as Record<string, unknown>;
 
   if (typeof element.id !== "string" || typeof element.x !== "number" || typeof element.y !== "number") {
-    return false;
-  }
-
-  if (
-    (element.role !== undefined && !isVisualElementRole(element.role)) ||
-    (element.chartId !== undefined && typeof element.chartId !== "string") ||
-    (element.groupId !== undefined && typeof element.groupId !== "string") ||
-    (element.dataRef !== undefined && !isVisualElementDataRef(element.dataRef)) ||
-    (element.editable !== undefined && typeof element.editable !== "boolean") ||
-    (element.locked !== undefined && typeof element.locked !== "boolean")
-  ) {
     return false;
   }
 
@@ -161,7 +96,6 @@ function isVisualElement(value: unknown): value is VisualElement {
   if (element.type === "line") {
     return (
       typeof element.width === "number" &&
-      (element.points === undefined || (Array.isArray(element.points) && element.points.every((point) => typeof point === "number"))) &&
       isCssVariableToken(element.stroke) &&
       typeof element.strokeWidth === "number"
     );

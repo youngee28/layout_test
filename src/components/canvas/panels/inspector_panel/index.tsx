@@ -5,8 +5,6 @@ import { useMemo, useState } from "react";
 import type { ChartRecommendation } from "@/schema/chart_recommendation";
 import type { ResolvedTable } from "@/schema/resolved_table";
 
-import { createTableProfile } from "./table_profile";
-
 type InspectorPanelProps = {
   resolvedTables: ResolvedTable[];
   chartRecommendations: ChartRecommendation[];
@@ -49,10 +47,6 @@ function getTableLabel(table: ResolvedTable, index: number): string {
   return table.title?.trim() || `표 ${index + 1}`;
 }
 
-function getTableName(table: ResolvedTable, index: number): string {
-  return `${getTableLabel(table, index)} · ${table.id}`;
-}
-
 function getRecommendationFields(recommendation: ChartRecommendation): string[] {
   return [
     recommendation.usedFields.categoryField,
@@ -88,7 +82,7 @@ function TableSelector({
             }`}
           >
             <span className="block">표 {index + 1}</span>
-            <span className="mt-1 block text-[10px] font-medium text-[var(--text-secondary)]">{getTableLabel(table, index)}</span>
+            {/* <span className="mt-1 block text-[10px] font-medium text-[var(--text-secondary)]">{getTableLabel(table, index)}</span> */}
           </button>
         );
       })}
@@ -104,53 +98,6 @@ function EmptyPanel({ title, description }: { title: string; description: string
         <p className="text-sm leading-6 text-[var(--text-secondary)]">{description}</p>
       </div>
     </div>
-  );
-}
-
-function DataProfilePanel({ table, tableIndex }: { table: ResolvedTable; tableIndex: number }) {
-  const profile = createTableProfile(table);
-
-  return (
-    <section className="rounded-[calc(var(--radius-card)-0.5rem)] border border-indigo-200/70 bg-indigo-50/80 p-4 text-sm text-slate-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-slate-200">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">표 해석 정보</p>
-          <h3 className="mt-2 text-base font-semibold text-slate-900 dark:text-white">{getTableName(table, tableIndex)}</h3>
-        </div>
-        <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold text-indigo-700 shadow-sm dark:bg-slate-900/40 dark:text-indigo-200">
-          {profile.rowCount}행 · {profile.columnCount}열
-        </span>
-      </div>
-
-      <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-[calc(var(--radius-card)-0.75rem)] bg-white/80 px-3 py-3 shadow-sm dark:bg-slate-900/30">
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">컬럼명 목록</dt>
-          <dd className="mt-2 text-sm leading-6 text-slate-900 dark:text-slate-100">{profile.columns.join(", ") || "컬럼 정보 없음"}</dd>
-        </div>
-        <div className="rounded-[calc(var(--radius-card)-0.75rem)] bg-white/80 px-3 py-3 shadow-sm dark:bg-slate-900/30">
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">수치형으로 보이는 컬럼</dt>
-          <dd className="mt-2 text-sm leading-6 text-slate-900 dark:text-slate-100">
-            {profile.numericColumns.join(", ") || "감지된 수치형 컬럼 없음"}
-          </dd>
-        </div>
-        <div className="rounded-[calc(var(--radius-card)-0.75rem)] bg-white/80 px-3 py-3 shadow-sm dark:bg-slate-900/30">
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">비어 있는 값 여부</dt>
-          <dd className="mt-2 text-sm leading-6 text-slate-900 dark:text-slate-100">{profile.hasEmptyValues ? "비어 있는 값이 포함되어 있습니다." : "비어 있는 값이 없습니다."}</dd>
-        </div>
-        <div className="rounded-[calc(var(--radius-card)-0.75rem)] bg-white/80 px-3 py-3 shadow-sm dark:bg-slate-900/30">
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">현재 선택된 표</dt>
-          <dd className="mt-2 text-sm leading-6 text-slate-900 dark:text-slate-100">표 {tableIndex + 1}{table.title ? ` · ${table.title}` : ""}</dd>
-        </div>
-        <div className="rounded-[calc(var(--radius-card)-0.75rem)] bg-white/80 px-3 py-3 shadow-sm dark:bg-slate-900/30 sm:col-span-2">
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">단위 포함 여부</dt>
-          <dd className="mt-2 text-sm leading-6 text-slate-900 dark:text-slate-100">
-            {profile.hasUnits
-              ? `단위로 보이는 값이 있습니다: ${profile.unitSignals.join(", ")}`
-              : "컬럼명과 값에서 뚜렷한 단위 표시는 감지되지 않았습니다."}
-          </dd>
-        </div>
-      </dl>
-    </section>
   );
 }
 
@@ -184,25 +131,16 @@ function FinalDataPanel({ resolvedTables }: { resolvedTables: ResolvedTable[] })
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">최종 데이터</p>
-        <p className="text-sm leading-6 text-[var(--text-secondary)]">업로드 후 확정된 parsed table을 그대로 미리보기하고, 현재 계산 가능한 기본 정보만 함께 보여줍니다.</p>
-      </div>
-
       <TableSelector resolvedTables={resolvedTables} selectedTableId={selectedTable?.id ?? null} onSelect={setSelectedTableId} />
 
       <div className="rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-3">
         <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
-          <div>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">업로드된 데이터 표 미리보기</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">현재 선택된 표의 상위 4개 행만 보여줍니다.</p>
-          </div>
-          {selectedTableIndex >= 0 ? (
-            <span className="rounded-full border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
-              표 {selectedTableIndex + 1}
-            </span>
+          {selectedTable && selectedTableIndex >= 0 ? (
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
+              {getTableLabel(selectedTable, selectedTableIndex)}</p>
           ) : null}
         </div>
+      
 
         <div className="mt-3 max-h-[260px] overflow-x-auto overflow-y-auto">
           {selectedTable ? (
@@ -220,7 +158,7 @@ function FinalDataPanel({ resolvedTables }: { resolvedTables: ResolvedTable[] })
                 </tr>
               </thead>
               <tbody>
-                {selectedTable.rows.slice(0, 4).map((row, rowIndex) => (
+                {selectedTable.rows.map((row, rowIndex) => (
                   <tr key={`${selectedTable.id}-preview-row-${rowIndex}`} className="odd:bg-[var(--surface-panel)] even:bg-[var(--surface-muted)]/60">
                     {selectedTable.columns.map((column) => (
                       <td key={`${selectedTable.id}-${rowIndex}-${column}`} className="border-b border-[var(--border-subtle)] px-3 py-2 align-top text-[var(--text-primary)] last:border-r-0">
@@ -235,7 +173,6 @@ function FinalDataPanel({ resolvedTables }: { resolvedTables: ResolvedTable[] })
         </div>
       </div>
 
-      {selectedTable && selectedTableIndex >= 0 ? <DataProfilePanel table={selectedTable} tableIndex={selectedTableIndex} /> : null}
     </div>
   );
 }
@@ -395,7 +332,6 @@ function DashboardPanel({ resolvedTables, chartRecommendations }: { resolvedTabl
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">대시보드 후보 목록</p>
-        <p className="text-sm leading-6 text-[var(--text-secondary)]">현재 state에 있는 chartRecommendations를 기준으로 최대 3개의 후보 요약만 구성합니다. 실제 후보 데이터가 없으면 빈 상태를 유지합니다.</p>
       </div>
 
       <DashboardCandidateSelector candidates={candidates} selectedCandidateId={selectedCandidate?.id ?? null} onSelect={setSelectedCandidateId} />
@@ -412,8 +348,7 @@ export function InspectorPanel({ resolvedTables, chartRecommendations }: Inspect
     <aside className="flex min-h-[400px] flex-col gap-4 rounded-[calc(var(--radius-shell)-0.5rem)] border border-[var(--panel-border)] bg-[var(--surface-panel)] p-5">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent-text)]">Inspector</p>
-        <h2 className="mt-2 text-xl font-bold tracking-tight text-[var(--text-primary)]">최종 데이터 / 대시보드 확인</h2>
-        <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">파일 업로드 후 확정된 표와 현재 생성 가능한 대시보드 정보를 한 곳에서 확인할 수 있도록 좌측 패널을 정리했습니다.</p>
+        <h2 className="mt-2 text-xl font-bold tracking-tight text-[var(--text-primary)]">데이터 확인</h2>
       </div>
 
       <div className="inline-flex rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-1 text-xs font-semibold">
@@ -426,7 +361,7 @@ export function InspectorPanel({ resolvedTables, chartRecommendations }: Inspect
               : "text-[var(--text-secondary)]"
           }`}
         >
-          최종 데이터
+          데이터 테이블
         </button>
         <button
           type="button"

@@ -15,7 +15,7 @@ export function CanvasLayout() {
 
       <div className="relative flex flex-1 min-h-0 items-stretch justify-stretch">
         <main className="flex w-full flex-col gap-8 rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-shell)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:p-5 lg:p-6 h-full overflow-hidden">
-          <div className="grid flex-1 min-h-0 grid-cols-1 gap-6 lg:grid-cols-[1fr_800px_1fr]">
+          <div className="grid flex-1 min-h-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_680px_minmax(0,1fr)]">
             <InspectorPanel
               resolvedTables={canvasState.resolvedTables}
               chartRecommendations={canvasState.chartRecommendations}
