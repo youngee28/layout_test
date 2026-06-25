@@ -234,13 +234,14 @@ function DashboardCandidateSelector({
 
 function getPreviewIcon(block: DashboardCandidateBlock): DashboardCandidatePreviewIcon {
   if (block.type === "metric" || block.chartType === "kpi") return "kpi";
-  if (block.type === "narrative") return "text";
   if (block.chartType === "line") return "line";
-  if (block.chartType === "area") return "area";
   if (block.chartType === "pie") return "pie";
   if (block.chartType === "donut") return "donut";
   if (block.chartType === "scatter") return "scatter";
   if (block.chartType === "rankingBar") return "rankingBar";
+  if (block.chartType === "horizontalBar") return "horizontalBar";
+  if (block.chartType === "groupedBar") return "groupedBar";
+  if (block.chartType === "verticalBar") return "verticalBar";
   return "bar";
 }
 
@@ -284,19 +285,11 @@ function getPreviewPalette(previewIcon: DashboardCandidatePreviewIcon, role: Das
     };
   }
 
-  if (previewIcon === "line" || previewIcon === "area") {
+  if (previewIcon === "line") {
     return {
       panel: "bg-sky-500/8",
       accent: "bg-sky-500/70",
       text: "text-sky-700 dark:text-sky-300",
-    };
-  }
-
-  if (previewIcon === "pie" || previewIcon === "donut") {
-    return {
-      panel: "bg-fuchsia-500/8",
-      accent: "bg-fuchsia-500/70",
-      text: "text-fuchsia-700 dark:text-fuchsia-300",
     };
   }
 
@@ -308,7 +301,15 @@ function getPreviewPalette(previewIcon: DashboardCandidatePreviewIcon, role: Das
     };
   }
 
-  if (previewIcon === "text" || previewIcon === "table") {
+  if (previewIcon === "pie" || previewIcon === "donut") {
+    return {
+      panel: "bg-fuchsia-500/8",
+      accent: "bg-fuchsia-500/70",
+      text: "text-fuchsia-700 dark:text-fuchsia-300",
+    };
+  }
+
+  if (previewIcon === "horizontalBar" || previewIcon === "groupedBar") {
     return {
       panel: "bg-amber-500/8",
       accent: "bg-amber-500/70",
@@ -328,24 +329,20 @@ function PreviewGlyph({ previewIcon }: { previewIcon: DashboardCandidatePreviewI
     return <div className="flex gap-1"><div className="h-2 w-2 rounded-full bg-current" /><div className="h-2 w-6 rounded-full bg-current/70" /></div>;
   }
 
-  if (previewIcon === "line" || previewIcon === "area") {
+  if (previewIcon === "line") {
     return <div className="flex h-5 items-end gap-[3px]">{[35, 60, 45, 80, 55].map((height, index) => <div key={`${previewIcon}-${index}`} className="w-1 rounded-full bg-current" style={{ height: `${height}%` }} />)}</div>;
-  }
-
-  if (previewIcon === "pie" || previewIcon === "donut") {
-    return <div className="h-5 w-5 rounded-full border-[4px] border-current/35 border-r-current" />;
   }
 
   if (previewIcon === "scatter") {
     return <div className="relative h-5 w-6">{[[2, 14], [8, 8], [14, 12], [18, 4]].map(([left, top], index) => <span key={`scatter-${index}`} className="absolute h-1.5 w-1.5 rounded-full bg-current" style={{ left, top }} />)}</div>;
   }
 
-  if (previewIcon === "table") {
-    return <div className="grid h-5 w-6 grid-cols-3 gap-[2px]">{Array.from({ length: 6 }).map((_, index) => <div key={`table-${index}`} className="rounded-[2px] bg-current/75" />)}</div>;
+  if (previewIcon === "pie" || previewIcon === "donut") {
+    return <div className="h-5 w-5 rounded-full border-[4px] border-current/35 border-r-current" />;
   }
 
-  if (previewIcon === "text") {
-    return <div className="flex flex-col gap-[3px]"><div className="h-1.5 w-7 rounded-full bg-current" /><div className="h-1.5 w-5 rounded-full bg-current/70" /></div>;
+  if (previewIcon === "horizontalBar" || previewIcon === "groupedBar") {
+    return <div className="flex flex-col gap-[3px] w-full max-w-[3rem]">{[70, 50, 85, 40].map((width, index) => <div key={`${previewIcon}-${index}`} className="h-1.5 rounded-full bg-current" style={{ width: `${width}%` }} />)}</div>;
   }
 
   return <div className="flex h-5 items-end gap-[3px]">{[50, 80, 45, 65].map((height, index) => <div key={`${previewIcon}-${index}`} className="w-1.5 rounded-t-sm bg-current" style={{ height: `${height}%` }} />)}</div>;

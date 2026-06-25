@@ -10,7 +10,6 @@ import {
   formatValue,
   formatPercent,
   getChartColor,
-  resolveTitle,
 } from "@/lib/render/chart_helpers";
 
 export function renderDonutChart(block: DashboardBlock, dataset: ParsedDataset, _analysis: DatasetAnalysis): VisualElement[] {

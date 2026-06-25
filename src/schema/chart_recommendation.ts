@@ -6,7 +6,7 @@ export type ChartRecommendation = {
   id: string;
   tableId: string;
   chartType: "bar" | "rankingBar" | "line" | "kpi";
-  intent?: "trend" | "comparison" | "ranking" | "highlight" | "summary";
+  intent?: "trend" | "comparison" | "ranking" | "highlight" | "summary" | "share";
   title?: string;
   message?: string;
   usedFields: {
@@ -39,7 +39,7 @@ export function isChartRecommendation(input: unknown): input is ChartRecommendat
   }
 
   return (
-    (raw.intent === undefined || raw.intent === "trend" || raw.intent === "comparison" || raw.intent === "ranking" || raw.intent === "highlight" || raw.intent === "summary") &&
+    (raw.intent === undefined || raw.intent === "trend" || raw.intent === "comparison" || raw.intent === "ranking" || raw.intent === "highlight" || raw.intent === "summary" || raw.intent === "share") &&
     (raw.title === undefined || typeof raw.title === "string") &&
     (raw.message === undefined || typeof raw.message === "string") &&
     (usedFields.categoryField === undefined || typeof usedFields.categoryField === "string") &&

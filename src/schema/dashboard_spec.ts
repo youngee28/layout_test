@@ -2,11 +2,15 @@ type UnknownRecord = Record<string, unknown>;
 
 export type ChartType =
   | "bar"
+  | "verticalBar"
+  | "horizontalBar"
+  | "groupedBar"
+  | "rankingBar"
   | "line"
-  | "donut"
+  | "scatter"
   | "pie"
-  | "kpi"
-  | "rankingBar";
+  | "donut"
+  | "kpi";
 
 export type VisualIntent =
   | "trend"
@@ -86,11 +90,15 @@ function asBlockRole(value: unknown): DashboardBlock["role"] {
 
 function asChartType(value: unknown): ChartType | undefined {
   return value === "bar" ||
+    value === "verticalBar" ||
+    value === "horizontalBar" ||
+    value === "groupedBar" ||
+    value === "rankingBar" ||
     value === "line" ||
-    value === "donut" ||
+    value === "scatter" ||
     value === "pie" ||
-    value === "kpi" ||
-    value === "rankingBar"
+    value === "donut" ||
+    value === "kpi"
     ? value
     : undefined;
 }

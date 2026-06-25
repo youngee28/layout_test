@@ -1,5 +1,6 @@
 "use client";
 
+import { CandidateSelectLayout } from "@/components/canvas/candidate-select/candidate_select_layout";
 import { CenterPanel } from "@/components/canvas/panels/center_panel";
 import { EditorPanel } from "@/components/canvas/panels/editor_panel";
 import { InspectorPanel } from "@/components/canvas/panels/inspector_panel";
@@ -15,35 +16,42 @@ export function CanvasLayout() {
 
       <div className="relative flex flex-1 min-h-0 items-stretch justify-stretch">
         <main className="flex w-full flex-col gap-8 rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-shell)] p-4 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:p-5 lg:p-6 h-full overflow-hidden">
-          <div className="grid flex-1 min-h-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_680px_minmax(0,1fr)]">
-            <InspectorPanel
+          {canvasState.generationStage === "candidates" ? (
+            <CandidateSelectLayout
               resolvedTables={canvasState.resolvedTables}
-              chartRecommendations={canvasState.chartRecommendations}
               dashboardCandidates={canvasState.dashboardCandidates}
             />
-            <CenterPanel
-              scene={canvasState.scene}
-              sceneKey={canvasState.sceneKey}
-              selectedElementId={canvasState.selectedElementId}
-              pendingEditId={canvasState.pendingEditId}
-              errorMessage={canvasState.errorMessage}
-              generationStage={canvasState.generationStage}
-              onSelectElement={canvasState.setSelectedElementId}
-              onChangeElement={canvasState.handleChangeElement}
-              onClearSelection={() => canvasState.setSelectedElementId(null)}
-              onClearPendingEditAction={canvasState.handleClearPendingEdit}
-            />
-            <EditorPanel
-              selectedTextElement={canvasState.selectedTextElement}
-              onChange={canvasState.handleTextChange}
-              onDelete={canvasState.handleDeleteElement}
-              onUndo={canvasState.handleUndo}
-              canUndo={canvasState.canUndo}
-              onAddText={canvasState.handleAddText}
-              sceneAvailable={Boolean(canvasState.scene)}
-              generationStage={canvasState.generationStage}
-            />
-          </div>
+          ) : (
+            <div className="grid flex-1 min-h-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_680px_minmax(0,1fr)]">
+              <InspectorPanel
+                resolvedTables={canvasState.resolvedTables}
+                chartRecommendations={canvasState.chartRecommendations}
+                dashboardCandidates={canvasState.dashboardCandidates}
+              />
+              <CenterPanel
+                scene={canvasState.scene}
+                sceneKey={canvasState.sceneKey}
+                selectedElementId={canvasState.selectedElementId}
+                pendingEditId={canvasState.pendingEditId}
+                errorMessage={canvasState.errorMessage}
+                generationStage={canvasState.generationStage}
+                onSelectElement={canvasState.setSelectedElementId}
+                onChangeElement={canvasState.handleChangeElement}
+                onClearSelection={() => canvasState.setSelectedElementId(null)}
+                onClearPendingEditAction={canvasState.handleClearPendingEdit}
+              />
+              <EditorPanel
+                selectedTextElement={canvasState.selectedTextElement}
+                onChange={canvasState.handleTextChange}
+                onDelete={canvasState.handleDeleteElement}
+                onUndo={canvasState.handleUndo}
+                canUndo={canvasState.canUndo}
+                onAddText={canvasState.handleAddText}
+                sceneAvailable={Boolean(canvasState.scene)}
+                generationStage={canvasState.generationStage}
+              />
+            </div>
+          )}
         </main>
       </div>
     </div>

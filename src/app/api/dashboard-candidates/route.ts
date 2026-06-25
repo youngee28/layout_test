@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { createSceneApiLogForPost, writeSceneApiLogRequestAndText, writeSceneApiLogResponseJson } from "@/app/api/scene/api_log";
 import { buildResolvedTables } from "@/lib/data/build_resolved_tables";
 import { parseCsvGrid, type ParsedCsvGrid } from "@/lib/data/parse_csv";
-import { normalizeDashboardCandidates, type DashboardCandidate } from "@/schema/dashboard_candidate";
+import { normalizeDashboardCandidates, type DashboardCandidate, type DashboardCandidateBlock } from "@/schema/dashboard_candidate";
 import { normalizeResolvedTablesResponse, type ResolvedTable } from "@/schema/resolved_table";
 
 loadEnv({ path: ".env.local", override: false });
@@ -83,10 +83,10 @@ const DASHBOARD_CANDIDATES_SCHEMA = {
                   properties: {
                     id: { type: "string" },
                     previewLabel: { type: "string" },
-                    previewIcon: {
-                      type: "string",
-                      enum: ["kpi", "bar", "rankingBar", "line", "pie", "donut", "scatter", "area", "table", "text"],
-                    },
+                previewIcon: {
+                  type: "string",
+                  enum: ["kpi", "bar", "verticalBar", "horizontalBar", "groupedBar", "rankingBar", "line", "pie", "donut", "scatter"],
+                },
                     role: { type: "string", enum: ["hero", "support", "evidence", "annotation", "detail", "closure"] },
                     x: { type: "number" },
                     y: { type: "number" },
@@ -109,8 +109,8 @@ const DASHBOARD_CANDIDATES_SCHEMA = {
                 description: { type: "string" },
                 role: { type: "string", enum: ["hero", "support", "evidence", "annotation", "detail", "closure"] },
                 priority: { type: "string", enum: ["high", "medium", "low"] },
-                type: { type: "string", enum: ["chart", "metric", "narrative"] },
-                chartType: { type: "string", enum: ["bar", "line", "donut", "pie", "kpi", "rankingBar", "scatter", "area"] },
+                type: { type: "string", enum: ["chart", "metric"] },
+                chartType: { type: "string", enum: ["bar", "verticalBar", "horizontalBar", "groupedBar", "rankingBar", "line", "pie", "donut", "scatter", "kpi"] },
                 dataBinding: {
                   type: "object",
                   properties: {
@@ -214,21 +214,35 @@ function buildDashboardCandidatesPrompt({ tables }: { tables: ResolvedTable[] })
     "결과는 최종 BI 대시보드가 아니라 인포그래픽 방향성을 잡기 위한 후보여야 합니다.",
     "표를 보고 핵심 메시지, 시선 흐름, 강조 우선순위를 먼저 생각하세요.",
     "후보는 2개 이상 3개 이하로 만드세요.",
-    // "각 후보는 서로 다른 관점 또는 스토리텔링 초점을 가져야 합니다.",
     "단순히 비교형/추세형 같은 템플릿 이름으로 끝내지 말고, 실제 데이터의 핵심 메시지를 제목과 goal에 반영하세요.",
     "각 후보는 title, summary, goal, narrative, sourceTableIds, viewpoints, layoutStrategy, preview, blocks를 가져야 합니다.",
     "preview는 HTML/CSS 카드 미리보기를 위한 축약 레이아웃입니다.",
+    "preview.headline은 카드 상단 헤드라인입니다.",
     "preview.chips는 짧은 태그 문자열 배열입니다.",
     "preview.blocks는 3~6개의 축약 블록으로 구성하세요.",
     "각 preview block에는 id, previewLabel, previewIcon, role, x, y, width, height를 포함하세요.",
-    "previewIcon은 kpi, bar, rankingBar, line, pie, donut, scatter, area, table, text 중 하나여야 합니다.",
+    "previewIcon은 kpi, bar, verticalBar, horizontalBar, groupedBar, rankingBar, line, pie, donut, scatter 중 하나여야 합니다.",
     "previewLabel은 12자 이내로 짧게 작성하세요.",
     "preview block 좌표는 미리보기용 0~100 좌표계입니다.",
     "blocks는 인포그래픽용 정보 위계를 나타내야 하며 role은 hero/support/evidence/annotation/detail/closure 중 하나입니다.",
     "priority는 high/medium/low 중 하나입니다.",
-    "blocks.type은 chart, metric, narrative 중 하나만 사용하세요.",
-    "텍스트 설명성 블록도 text나 note가 아니라 narrative type으로 표현하세요.",
-    // "chartType은 bar, rankingBar, line, pie, donut, kpi, scatter, area 중 필요할 때만 사용하세요.",
+    "blocks.type은 chart, metric 중 하나만 사용하세요. narrative는 절대 사용하지 마세요.",
+    "모든 블록은 KPI 또는 차트로만 구성하세요. 텍스트 설명 블록은 candidate의 summary/narrative에만 담고 blocks에는 포함하지 마세요.",
+    "차트 종류는 반드시 다양하게 분배하세요. 후보 하나당 최소 2가지 이상의 차트 종류를 사용하세요.",
+    "viewpoint에 따라 다음 차트를 우선적으로 사용하세요:",
+    "- comparison(비교): groupedBar 또는 horizontalBar",
+    "- trend(추세): line",
+    "- ranking(순위): rankingBar 또는 horizontalBar",
+    "- composition(구성): pie 또는 donut",
+    "- distribution(분포): scatter",
+    "- correlation(상관): scatter",
+    "- summary(요약): kpi",
+    "- highlight(강조): kpi",
+    "- flow(흐름): line 또는 bar",
+    "bar, verticalBar, rankingBar는 수직 막대 차트입니다. horizontalBar는 단일 series 수평 막대 차트입니다. groupedBar는 2개 이상 series를 가진 수평 막대 차트입니다.",
+    "groupedBar를 사용할 때는 categoryField(행정구역/카테고리)와 2개 이상의 valueField(또는 valueField + groupField)를 바인딩하여 여러 series를 표현하세요.",
+    "metric type일 때는 chartType을 kpi로 설정하세요. chart type일 때는 verticalBar/horizontalBar/groupedBar/rankingBar/line/pie/donut/scatter 중 하나를 설정하세요.",
+    "chartType은 반드시 명시하세요. type=chart인데 chartType이 없는 경우는 허용하지 않습니다.",
     "dataBinding의 field명은 반드시 해당 table의 columns 안에서만 선택하세요.",
     "layout은 미리보기용 0~100 좌표계입니다. x/y/width/height를 숫자로 넣고, 전체적으로 hero 블록이 먼저 보이도록 설계하세요.",
     "블록 수는 과도하게 많지 않게 유지하고, 핵심 메시지 전달을 우선하세요.",
@@ -281,82 +295,119 @@ async function resolveTablesWithApi({ grid }: { grid: ParsedCsvGrid }): Promise<
 }
 
 function buildFallbackCandidates(tables: ResolvedTable[]): DashboardCandidate[] {
+  const firstTable = tables[0];
+  const numericColumn = firstTable
+    ? firstTable.columns.find((column) =>
+        firstTable.rows.some((row) => {
+          const value = row[column];
+          return value !== undefined && value !== "" && !Number.isNaN(Number(value.replace(/,/g, "")));
+        }),
+      ) ?? firstTable.columns[0]
+    : undefined;
+  const categoryColumn = firstTable
+    ? firstTable.columns.find((column) => column !== numericColumn) ?? firstTable.columns[0]
+    : undefined;
+
   return [
     {
-      id: "candidate-data-review",
-      title: "데이터 구조 점검형",
-      summary: "바로 시각화하기보다 표 구조와 핵심 지표를 먼저 정리하는 구상입니다.",
-      goal: "인포그래픽에 쓰일 핵심 표와 수치를 먼저 선별합니다.",
-      narrative: tables.length > 0
-        ? "감지된 표를 기준으로 제목, 핵심 수치, 보조 설명을 먼저 배치하는 안전한 시작점입니다."
-        : "시각화 가능한 표가 적어 우선 데이터 구조를 설명하는 안내형 구성이 적합합니다.",
+      id: "candidate-summary",
+      title: "핵심 지표 요약형",
+      summary: "주요 수치를 KPI로 강조하고 핵심 비교 차트를 함께 보여주는 구성입니다.",
+      goal: "가장 중요한 수치와 분포를 빠르게 파악할 수 있게 합니다.",
+      narrative: "핵심 KPI와 차트로만 구성된 대시보드 후보입니다.",
       sourceTableIds: tables.map((table) => table.id),
       viewpoints: ["summary", "highlight"],
-      layoutStrategy: "hero-narrative-stack",
+      layoutStrategy: "hero-kpi-chart",
       preview: {
+        headline: "핵심 지표 요약",
         chips: ["summary", "highlight"],
         blocks: [
           {
-            id: "fallback-preview-hero",
-            previewLabel: "핵심 메시지",
-            previewIcon: "text",
+            id: "fallback-preview-kpi-1",
+            previewLabel: "대표 KPI",
+            previewIcon: "kpi",
             role: "hero",
             x: 0,
             y: 0,
-            width: 100,
+            width: 48,
             height: 24,
           },
           {
-            id: "fallback-preview-note",
-            previewLabel: "구조 메모",
-            previewIcon: "text",
-            role: "annotation",
+            id: "fallback-preview-kpi-2",
+            previewLabel: "보조 KPI",
+            previewIcon: "kpi",
+            role: "support",
+            x: 52,
+            y: 0,
+            width: 48,
+            height: 24,
+          },
+          {
+            id: "fallback-preview-chart",
+            previewLabel: "분포 차트",
+            previewIcon: firstTable ? "horizontalBar" : "kpi",
+            role: "evidence",
             x: 0,
             y: 28,
             width: 100,
-            height: 24,
-          },
-          {
-            id: "fallback-preview-kpi",
-            previewLabel: "대표 지표",
-            previewIcon: "kpi",
-            role: "evidence",
-            x: 0,
-            y: 58,
-            width: 48,
-            height: 18,
+            height: 48,
           },
         ],
       },
       blocks: [
         {
-          id: "fallback-hero",
-          title: "핵심 메시지 영역",
-          description: "데이터의 주제를 한 줄로 요약하는 헤드라인 블록입니다.",
+          id: "fallback-kpi-1",
+          title: "대표 KPI",
           role: "hero",
           priority: "high",
-          type: "narrative",
-          layout: { x: 0, y: 0, width: 100, height: 24 },
+          type: "metric",
+          chartType: "kpi",
+          dataBinding: firstTable
+            ? { tableId: firstTable.id, valueField: numericColumn }
+            : undefined,
+          layout: { x: 0, y: 0, width: 48, height: 24 },
         },
         {
-          id: "fallback-note",
-          title: "구조 확인 메모",
-          description: "차트 생성 전, 어떤 표를 메인 근거로 쓸지 정리합니다.",
-          role: "annotation",
-          priority: "medium",
-          type: "narrative",
-          layout: { x: 0, y: 28, width: 100, height: 24 },
-        },
-        {
-          id: "fallback-evidence",
-          title: "대표 지표 후보",
-          description: "최종 인포그래픽에서 강조할 수치를 고르는 보조 영역입니다.",
-          role: "evidence",
+          id: "fallback-kpi-2",
+          title: "보조 KPI",
+          role: "support",
           priority: "medium",
           type: "metric",
-          layout: { x: 0, y: 58, width: 48, height: 18 },
+          chartType: "kpi",
+          dataBinding: firstTable
+            ? { tableId: firstTable.id, valueField: numericColumn }
+            : undefined,
+          layout: { x: 52, y: 0, width: 48, height: 24 },
         },
-      ],
+        ...(firstTable
+          ? [
+              {
+                id: "fallback-bar",
+                title: "카테고리별 비교",
+                role: "evidence",
+                priority: "high",
+                type: "chart",
+                chartType: "horizontalBar",
+                dataBinding: {
+                  tableId: firstTable.id,
+                  categoryField: categoryColumn,
+                  valueField: numericColumn,
+                },
+                layout: { x: 0, y: 28, width: 100, height: 48 },
+              } as const,
+            ]
+          : [
+              {
+                id: "fallback-kpi-3",
+                title: "추가 KPI",
+                role: "evidence",
+                priority: "medium",
+                type: "metric",
+                chartType: "kpi",
+                layout: { x: 0, y: 28, width: 100, height: 48 },
+              } as const,
+            ]),
+      ] as DashboardCandidateBlock[],
     },
   ];
 }

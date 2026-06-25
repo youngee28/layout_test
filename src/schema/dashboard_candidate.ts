@@ -23,19 +23,19 @@ export type DashboardCandidateBlockRole =
 
 export type DashboardCandidateBlockPriority = "high" | "medium" | "low";
 
-export type DashboardCandidateBlockType = "chart" | "metric" | "narrative";
+export type DashboardCandidateBlockType = "chart" | "metric";
 
 export type DashboardCandidatePreviewIcon =
   | "kpi"
   | "bar"
+  | "verticalBar"
+  | "horizontalBar"
+  | "groupedBar"
   | "rankingBar"
   | "line"
   | "pie"
   | "donut"
-  | "scatter"
-  | "area"
-  | "table"
-  | "text";
+  | "scatter";
 
 export type DashboardCandidatePreviewBlock = {
   id: string;
@@ -49,6 +49,7 @@ export type DashboardCandidatePreviewBlock = {
 };
 
 export type DashboardCandidatePreview = {
+  headline?: string;
   chips: string[];
   blocks: DashboardCandidatePreviewBlock[];
 };
@@ -141,12 +142,8 @@ function asPriority(value: unknown): DashboardCandidateBlockPriority {
 }
 
 function asBlockType(value: unknown): DashboardCandidateBlockType {
-  if (value === "chart" || value === "metric" || value === "narrative") {
+  if (value === "chart" || value === "metric") {
     return value;
-  }
-
-  if (value === "text" || value === "note") {
-    return "narrative";
   }
 
   return "chart";
@@ -154,13 +151,15 @@ function asBlockType(value: unknown): DashboardCandidateBlockType {
 
 function asChartType(value: unknown): DashboardCandidateBlock["chartType"] {
   return value === "bar" ||
-    value === "line" ||
-    value === "donut" ||
-    value === "pie" ||
-    value === "kpi" ||
+    value === "verticalBar" ||
+    value === "horizontalBar" ||
+    value === "groupedBar" ||
     value === "rankingBar" ||
+    value === "line" ||
     value === "scatter" ||
-    value === "area"
+    value === "pie" ||
+    value === "donut" ||
+    value === "kpi"
     ? value
     : undefined;
 }
@@ -168,14 +167,14 @@ function asChartType(value: unknown): DashboardCandidateBlock["chartType"] {
 function asPreviewIcon(value: unknown): DashboardCandidatePreviewIcon | undefined {
   return value === "kpi" ||
     value === "bar" ||
+    value === "verticalBar" ||
+    value === "horizontalBar" ||
+    value === "groupedBar" ||
     value === "rankingBar" ||
     value === "line" ||
     value === "pie" ||
     value === "donut" ||
-    value === "scatter" ||
-    value === "area" ||
-    value === "table" ||
-    value === "text"
+    value === "scatter"
     ? value
     : undefined;
 }
@@ -262,6 +261,7 @@ function normalizePreview(value: unknown): DashboardCandidatePreview | undefined
   }
 
   return {
+    headline: asString(raw.headline),
     chips: asStringArray(raw.chips),
     blocks,
   };
