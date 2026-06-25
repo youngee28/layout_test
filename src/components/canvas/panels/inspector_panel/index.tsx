@@ -234,7 +234,7 @@ function DashboardCandidateSelector({
 
 function getPreviewIcon(block: DashboardCandidateBlock): DashboardCandidatePreviewIcon {
   if (block.type === "metric" || block.chartType === "kpi") return "kpi";
-  if (block.type === "text" || block.type === "note") return "text";
+  if (block.type === "narrative") return "text";
   if (block.chartType === "line") return "line";
   if (block.chartType === "area") return "area";
   if (block.chartType === "pie") return "pie";
@@ -246,10 +246,6 @@ function getPreviewIcon(block: DashboardCandidateBlock): DashboardCandidatePrevi
 
 function getPreviewLabel(block: DashboardCandidateBlock): string {
   return block.title.trim().slice(0, 12) || "블록";
-}
-
-function getPreviewHeadline(candidate: DashboardPlanningCandidate): string {
-  return candidate.preview?.headline ?? candidate.title;
 }
 
 function getPreviewBlocks(candidate: DashboardPlanningCandidate): DashboardCandidatePreviewBlock[] {
@@ -357,7 +353,6 @@ function PreviewGlyph({ previewIcon }: { previewIcon: DashboardCandidatePreviewI
 
 function DashboardCandidateThumbnail({ candidate }: { candidate: DashboardPlanningCandidate }) {
   const previewBlocks = getPreviewBlocks(candidate);
-  const previewHeadline = getPreviewHeadline(candidate);
 
   return (
     <div className="relative mt-4 overflow-hidden rounded-[calc(var(--radius-card)-0.5rem)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-3 shadow-[var(--shadow-neutral-soft)]">
@@ -365,7 +360,7 @@ function DashboardCandidateThumbnail({ candidate }: { candidate: DashboardPlanni
       <div className="relative aspect-[3/4] rounded-[calc(var(--radius-card)-0.75rem)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-2">
         <div className="h-full rounded-[calc(var(--radius-card)-0.875rem)] bg-[var(--surface-panel)] p-2">
           <div className="mb-2 rounded-[calc(var(--radius-card)-1rem)] border border-[var(--border-subtle)] bg-[var(--accent-soft)]/70 px-3 py-2">
-            <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">{previewHeadline}</p>
+            <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">{candidate.title}</p>
           </div>
           <div className="relative h-[calc(100%-2.25rem)]">
             {previewBlocks.map((block) => {
@@ -536,9 +531,6 @@ function DashboardCandidatePanel({ dashboardCandidates }: { dashboardCandidates:
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">대시보드 후보</p>
-        <p className="text-sm leading-6 text-[var(--text-secondary)]">
-          AI가 표 데이터를 바탕으로 잡은 인포그래픽 방향 후보입니다.
-        </p>
       </div>
 
       <DashboardCandidateSelector candidates={candidates} selectedCandidateId={selectedCandidate?.id ?? null} onSelect={setSelectedCandidateId} />

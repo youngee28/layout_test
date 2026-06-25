@@ -69,6 +69,36 @@ const DASHBOARD_CANDIDATES_SCHEMA = {
             },
           },
           layoutStrategy: { type: "string" },
+          preview: {
+            type: "object",
+            properties: {
+              chips: {
+                type: "array",
+                items: { type: "string" },
+              },
+              blocks: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    previewLabel: { type: "string" },
+                    previewIcon: {
+                      type: "string",
+                      enum: ["kpi", "bar", "rankingBar", "line", "pie", "donut", "scatter", "area", "table", "text"],
+                    },
+                    role: { type: "string", enum: ["hero", "support", "evidence", "annotation", "detail", "closure"] },
+                    x: { type: "number" },
+                    y: { type: "number" },
+                    width: { type: "number" },
+                    height: { type: "number" },
+                  },
+                  required: ["id", "previewLabel", "previewIcon", "role", "x", "y", "width", "height"],
+                },
+              },
+            },
+            required: ["chips", "blocks"],
+          },
           blocks: {
             type: "array",
             items: {
@@ -79,7 +109,7 @@ const DASHBOARD_CANDIDATES_SCHEMA = {
                 description: { type: "string" },
                 role: { type: "string", enum: ["hero", "support", "evidence", "annotation", "detail", "closure"] },
                 priority: { type: "string", enum: ["high", "medium", "low"] },
-                type: { type: "string", enum: ["chart", "metric", "text", "note"] },
+                type: { type: "string", enum: ["chart", "metric", "narrative"] },
                 chartType: { type: "string", enum: ["bar", "line", "donut", "pie", "kpi", "rankingBar", "scatter", "area"] },
                 dataBinding: {
                   type: "object",
@@ -106,7 +136,7 @@ const DASHBOARD_CANDIDATES_SCHEMA = {
             },
           },
         },
-        required: ["id", "title", "summary", "goal", "narrative", "sourceTableIds", "viewpoints", "layoutStrategy", "blocks"],
+        required: ["id", "title", "summary", "goal", "narrative", "sourceTableIds", "viewpoints", "layoutStrategy", "preview", "blocks"],
       },
     },
   },
@@ -186,10 +216,18 @@ function buildDashboardCandidatesPrompt({ tables }: { tables: ResolvedTable[] })
     "후보는 2개 이상 3개 이하로 만드세요.",
     // "각 후보는 서로 다른 관점 또는 스토리텔링 초점을 가져야 합니다.",
     "단순히 비교형/추세형 같은 템플릿 이름으로 끝내지 말고, 실제 데이터의 핵심 메시지를 제목과 goal에 반영하세요.",
-    "각 후보는 title, summary, goal, narrative, sourceTableIds, viewpoints, layoutStrategy, blocks를 가져야 합니다.",
+    "각 후보는 title, summary, goal, narrative, sourceTableIds, viewpoints, layoutStrategy, preview, blocks를 가져야 합니다.",
+    "preview는 HTML/CSS 카드 미리보기를 위한 축약 레이아웃입니다.",
+    "preview.chips는 짧은 태그 문자열 배열입니다.",
+    "preview.blocks는 3~6개의 축약 블록으로 구성하세요.",
+    "각 preview block에는 id, previewLabel, previewIcon, role, x, y, width, height를 포함하세요.",
+    "previewIcon은 kpi, bar, rankingBar, line, pie, donut, scatter, area, table, text 중 하나여야 합니다.",
+    "previewLabel은 12자 이내로 짧게 작성하세요.",
+    "preview block 좌표는 미리보기용 0~100 좌표계입니다.",
     "blocks는 인포그래픽용 정보 위계를 나타내야 하며 role은 hero/support/evidence/annotation/detail/closure 중 하나입니다.",
     "priority는 high/medium/low 중 하나입니다.",
-    // "type은 chart/metric/table 중 하나입니다.",
+    "blocks.type은 chart, metric, narrative 중 하나만 사용하세요.",
+    "텍스트 설명성 블록도 text나 note가 아니라 narrative type으로 표현하세요.",
     // "chartType은 bar, rankingBar, line, pie, donut, kpi, scatter, area 중 필요할 때만 사용하세요.",
     "dataBinding의 field명은 반드시 해당 table의 columns 안에서만 선택하세요.",
     "layout은 미리보기용 0~100 좌표계입니다. x/y/width/height를 숫자로 넣고, 전체적으로 hero 블록이 먼저 보이도록 설계하세요.",
@@ -254,9 +292,8 @@ function buildFallbackCandidates(tables: ResolvedTable[]): DashboardCandidate[] 
         : "시각화 가능한 표가 적어 우선 데이터 구조를 설명하는 안내형 구성이 적합합니다.",
       sourceTableIds: tables.map((table) => table.id),
       viewpoints: ["summary", "highlight"],
-      layoutStrategy: "hero-note-stack",
+      layoutStrategy: "hero-narrative-stack",
       preview: {
-        headline: "데이터 구조 점검",
         chips: ["summary", "highlight"],
         blocks: [
           {
@@ -298,7 +335,7 @@ function buildFallbackCandidates(tables: ResolvedTable[]): DashboardCandidate[] 
           description: "데이터의 주제를 한 줄로 요약하는 헤드라인 블록입니다.",
           role: "hero",
           priority: "high",
-          type: "text",
+          type: "narrative",
           layout: { x: 0, y: 0, width: 100, height: 24 },
         },
         {
@@ -307,7 +344,7 @@ function buildFallbackCandidates(tables: ResolvedTable[]): DashboardCandidate[] 
           description: "차트 생성 전, 어떤 표를 메인 근거로 쓸지 정리합니다.",
           role: "annotation",
           priority: "medium",
-          type: "note",
+          type: "narrative",
           layout: { x: 0, y: 28, width: 100, height: 24 },
         },
         {

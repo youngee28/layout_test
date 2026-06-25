@@ -4,7 +4,7 @@ import { KonvaRenderer } from "@/components/canvas/editor/konva_renderer";
 import {
   type VisualElement,
   type VisualScene,
-} from "@/schema/visual_scene";
+} from "@/schema/visual_element";
 
 type PreviewStageProps = {
   scene: VisualScene;

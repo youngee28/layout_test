@@ -4,7 +4,7 @@ import Konva from "konva";
 import { useEffect, useRef } from "react";
 import { Line, Transformer } from "react-konva";
 
-import { resolveThemeValue, type VisualLineElement } from "@/schema/visual_scene";
+import { resolveThemeValue, type VisualLineElement } from "@/schema/visual_element";
 
 type EditableLineProps = {
   element: VisualLineElement;
@@ -21,8 +21,8 @@ export function EditableLine({
 }: EditableLineProps) {
   const shapeRef = useRef<Konva.Line>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
-  const points = element.points ?? [0, 0, element.width, 0];
-  const canTransformWidthOnly = element.points === undefined;
+  const points = [0, 0, element.width, 0];
+  const isInteractive = element.editable !== false && element.locked !== true;
 
   useEffect(() => {
     if (!isSelected || !shapeRef.current || !transformerRef.current) {
@@ -45,16 +45,28 @@ export function EditableLine({
         lineCap="round"
         hitStrokeWidth={24}
         strokeScaleEnabled={false}
-        draggable
+        draggable={isInteractive}
         onMouseDown={(event) => {
+          if (!isInteractive) {
+            return;
+          }
+
           event.cancelBubble = true;
           onSelectAction();
         }}
         onTap={(event) => {
+          if (!isInteractive) {
+            return;
+          }
+
           event.cancelBubble = true;
           onSelectAction();
         }}
         onDragEnd={() => {
+          if (!isInteractive) {
+            return;
+          }
+
           const node = shapeRef.current;
 
           if (!node) {
@@ -68,21 +80,7 @@ export function EditableLine({
           });
         }}
         onTransformEnd={() => {
-          if (!canTransformWidthOnly) {
-            const node = shapeRef.current;
-
-            if (!node) {
-              return;
-            }
-
-            node.scaleX(1);
-            node.scaleY(1);
-
-            onChangeAction({
-              ...element,
-              x: node.x(),
-              y: node.y(),
-            });
+          if (!isInteractive) {
             return;
           }
 
@@ -106,17 +104,17 @@ export function EditableLine({
         }}
       />
 
-      {isSelected ? (
+      {isSelected && isInteractive ? (
         <Transformer
           ref={transformerRef}
           rotateEnabled={false}
           flipEnabled={false}
-          enabledAnchors={canTransformWidthOnly ? ["middle-left", "middle-right"] : []}
+          enabledAnchors={["middle-left", "middle-right"]}
           anchorFill={resolveThemeValue("--surface-card")}
           anchorStroke={resolveThemeValue("--accent")}
           borderStroke={resolveThemeValue("--accent")}
           boundBoxFunc={(oldBox, newBox) => {
-            if (canTransformWidthOnly && newBox.width < 1) {
+            if (newBox.width < 1) {
               return oldBox;
             }
 

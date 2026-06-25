@@ -1,7 +1,7 @@
 import type { DatasetAnalysis } from "@/lib/data/analyze_dataset";
 import type { ParsedDataset } from "@/lib/data/parse_csv";
 import type { DashboardBlock } from "@/schema/dashboard_spec";
-import type { CssVariableToken, VisualElement } from "@/schema/visual_scene";
+import type { CssVariableToken, VisualElement } from "@/schema/visual_element";
 import {
   buildChartData,
   chartBackground,
@@ -39,7 +39,6 @@ export function renderPieChart(block: DashboardBlock, dataset: ParsedDataset, _a
       fontStyle: "normal",
       fill: "--text-muted",
       align: "center",
-      role: "annotation",
       chartId: block.id,
       groupId: block.id,
       editable: true,
@@ -58,7 +57,6 @@ export function renderPieChart(block: DashboardBlock, dataset: ParsedDataset, _a
     fill: "--accent-soft" as CssVariableToken,
     stroke: "--accent" as CssVariableToken,
     strokeWidth: 2,
-    role: "chartBackground",
     chartId: block.id,
     groupId: block.id,
     editable: true,
@@ -77,7 +75,6 @@ export function renderPieChart(block: DashboardBlock, dataset: ParsedDataset, _a
     fontStyle: "bold",
     fill: "--text-primary" as CssVariableToken,
     align: "center",
-    role: "dataLabel",
     chartId: block.id,
     groupId: block.id,
     editable: true,
@@ -101,7 +98,6 @@ export function renderPieChart(block: DashboardBlock, dataset: ParsedDataset, _a
       fontStyle: "normal",
       fill: "--text-secondary",
       align: "center",
-      role: "annotation",
       chartId: block.id,
       groupId: block.id,
       dataRef: {
@@ -130,7 +126,6 @@ export function renderPieChart(block: DashboardBlock, dataset: ParsedDataset, _a
         y: rowY + 6,
         radius: 6,
         fill: rowColor,
-        role: "dataMark",
         chartId: block.id,
         groupId: block.id,
         dataRef: {
@@ -152,7 +147,6 @@ export function renderPieChart(block: DashboardBlock, dataset: ParsedDataset, _a
         fontFamily: "--font-geist-sans",
         fontStyle: "normal",
         fill: "--text-primary",
-        role: "legend",
         chartId: block.id,
         groupId: block.id,
         dataRef: {

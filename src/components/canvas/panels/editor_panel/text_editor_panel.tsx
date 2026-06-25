@@ -1,4 +1,4 @@
-import { type CssVariableToken, type VisualTextElement } from "@/schema/visual_scene";
+import { type CssVariableToken, type VisualTextElement } from "@/schema/visual_element";
 
 type TextEditorPanelProps = {
   element: VisualTextElement | null;

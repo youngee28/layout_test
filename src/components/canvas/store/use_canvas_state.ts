@@ -5,13 +5,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ChartRecommendation } from "@/schema/chart_recommendation";
 import type { DashboardCandidate } from "@/schema/dashboard_candidate";
 import type { ResolvedTable } from "@/schema/resolved_table";
-import { readUploadedScenePayload, isCanvasScenePayload } from "@/schema/uploaded_scene_storage";
+import { readUploadedScenePayload } from "@/schema/uploaded_scene_storage";
 import {
-  isVisualScene,
   type VisualElement,
   type VisualScene,
   type VisualTextElement,
-} from "@/schema/visual_scene";
+} from "@/schema/visual_element";
 
 export function useCanvasState() {
   const [scene, setScene] = useState<VisualScene | null>(null);
@@ -24,7 +23,7 @@ export function useCanvasState() {
   const [pendingEditId, setPendingEditId] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [sceneSource, setSceneSource] = useState<"upload" | "development" | null>(null);
+  const [sceneSource, setSceneSource] = useState<"upload" | null>(null);
   const [generationStage, setGenerationStage] = useState<"candidates" | "ready">("ready");
 
   useEffect(() => {
@@ -51,59 +50,20 @@ export function useCanvasState() {
         return;
       }
 
-      try {
-        const response = await fetch("/api/scene", { cache: "no-store" });
-        const data: unknown = await response.json();
-
-        if (!response.ok) {
-          const message =
-            typeof data === "object" && data !== null && "error" in data && typeof data.error === "string"
-              ? data.error
-              : "Failed to load scene.";
-
-          throw new Error(message);
-        }
-
-        if (!isMounted) {
-          return;
-        }
-
-        const payload = isCanvasScenePayload(data)
-          ? data
-          : isVisualScene(data)
-            ? { scene: data, generationStage: "ready" as const }
-            : null;
-
-        if (!payload) {
-          throw new Error("Scene response was not a valid payload.");
-        }
-
-        setScene(payload.scene ?? null);
-        setResolvedTables(payload.resolvedTables ?? []);
-        setChartRecommendations(payload.chartRecommendations ?? []);
-        setDashboardCandidates(payload.dashboardCandidates ?? []);
-        setSceneHistory(payload.scene ? [payload.scene] : []);
-        setHistoryIndex(payload.scene ? 0 : -1);
-        setStatus("ready");
-        setErrorMessage(null);
-        setSceneSource("development");
-        setGenerationStage(payload.generationStage ?? "ready");
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        const message = error instanceof Error ? error.message : "Failed to load scene.";
-
-        setScene(null);
-        setResolvedTables([]);
-        setChartRecommendations([]);
-        setDashboardCandidates([]);
-        setStatus("error");
-        setErrorMessage(message);
-        setSceneSource(null);
-        setGenerationStage("ready");
+      if (!isMounted) {
+        return;
       }
+
+      setScene(null);
+      setResolvedTables([]);
+      setChartRecommendations([]);
+      setDashboardCandidates([]);
+      setSceneHistory([]);
+      setHistoryIndex(-1);
+      setStatus("error");
+      setErrorMessage("Upload a CSV from the home page to generate a canvas scene.");
+      setSceneSource(null);
+      setGenerationStage("ready");
     }
 
     void loadScene();
@@ -115,7 +75,7 @@ export function useCanvasState() {
 
   const helperText = useMemo(() => {
     if (status === "loading") {
-      return "Checking for an uploaded scene first, then falling back to /api/scene using input/data.csv.";
+      return "Checking for the uploaded scene payload.";
     }
 
     if (status === "error") {
@@ -130,7 +90,7 @@ export function useCanvasState() {
       return "Scene loaded from the uploaded CSV response and validated before rendering.";
     }
 
-    return "Scene loaded from the development CSV source.";
+    return "Upload a CSV from the home page to generate a scene.";
   }, [errorMessage, generationStage, sceneSource, status]);
 
   const sceneKey = useMemo(() => (scene ? JSON.stringify(scene) : "empty-scene"), [scene]);

@@ -1,7 +1,7 @@
 import type { DatasetAnalysis } from "@/lib/data/analyze_dataset";
 import type { ParsedDataset } from "@/lib/data/parse_csv";
 import type { DashboardBlock } from "@/schema/dashboard_spec";
-import type { VisualElement } from "@/schema/visual_scene";
+import type { VisualElement } from "@/schema/visual_element";
 import {
   buildLineChartData,
   chartAxis,
@@ -14,6 +14,40 @@ import {
   gridLines,
   truncateLabel,
 } from "@/lib/render/chart_helpers";
+
+function createTrendTrailElements(blockId: string, pointPositions: Array<{ x: number; y: number }>, offsetX: number, offsetY: number): VisualElement[] {
+  const trailElements: VisualElement[] = [];
+
+  pointPositions.forEach((point, index) => {
+    const nextPoint = pointPositions[index + 1];
+
+    if (!nextPoint) {
+      return;
+    }
+
+    const distance = Math.hypot(nextPoint.x - point.x, nextPoint.y - point.y);
+    const steps = Math.max(2, Math.ceil(distance / 18));
+
+    for (let step = 1; step < steps; step += 1) {
+      const progress = step / steps;
+
+      trailElements.push({
+        id: `${blockId}-trail-${index + 1}-${step}`,
+        type: "circle",
+        x: offsetX + point.x + (nextPoint.x - point.x) * progress,
+        y: offsetY + point.y + (nextPoint.y - point.y) * progress,
+        radius: 2,
+        fill: "--accent",
+        chartId: blockId,
+        groupId: blockId,
+        editable: false,
+        locked: true,
+      });
+    }
+  });
+
+  return trailElements;
+}
 
 export function renderLineChart(block: DashboardBlock, dataset: ParsedDataset, _analysis: DatasetAnalysis): VisualElement[] {
   const chartData = buildLineChartData(block, dataset);
@@ -51,7 +85,6 @@ export function renderLineChart(block: DashboardBlock, dataset: ParsedDataset, _
       fontStyle: "normal",
       fill: "--text-muted",
       align: "center",
-      role: "annotation",
       chartId: block.id,
       groupId: block.id,
       editable: true,
@@ -69,23 +102,7 @@ export function renderLineChart(block: DashboardBlock, dataset: ParsedDataset, _
     return { x, y, item };
   });
 
-  const polylinePoints = pointPositions.flatMap((point) => [point.x, point.y]);
-
-  elements.push({
-    id: `${block.id}-line`,
-    type: "line",
-    x: layout.chartLeft,
-    y: layout.chartTop,
-    width: layout.chartWidth,
-    points: polylinePoints,
-    stroke: "--accent",
-    strokeWidth: 3,
-    role: "decoration",
-    chartId: block.id,
-    groupId: block.id,
-    editable: true,
-    locked: false,
-  });
+  elements.push(...createTrendTrailElements(block.id, pointPositions, layout.chartLeft, layout.chartTop));
 
   pointPositions.forEach((point, index) => {
     const absoluteX = layout.chartLeft + point.x;
@@ -104,7 +121,6 @@ export function renderLineChart(block: DashboardBlock, dataset: ParsedDataset, _
       fill: getChartColor(index),
       stroke: "--surface-card",
       strokeWidth: 2,
-      role: "dataMark",
       chartId: block.id,
       groupId: block.id,
       dataRef: {
@@ -129,7 +145,6 @@ export function renderLineChart(block: DashboardBlock, dataset: ParsedDataset, _
         fontStyle: "normal",
         fill: "--text-secondary",
         align: "center",
-        role: "dataLabel",
         chartId: block.id,
         groupId: block.id,
         dataRef: {
@@ -155,7 +170,6 @@ export function renderLineChart(block: DashboardBlock, dataset: ParsedDataset, _
         fontStyle: "normal",
         fill: "--text-primary",
         align: "center",
-        role: "dataLabel",
         chartId: block.id,
         groupId: block.id,
         dataRef: {

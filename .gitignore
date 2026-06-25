@@ -1,11 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-#data
-/input/data.csv
-/input/it_service_combined.csv
-/input/system-prompt.txt
-/input/system_prompt(konva).txt
-/output/
 /log/
 
 # dependencies

@@ -4,7 +4,7 @@ import Konva from "konva";
 import { useEffect, useRef } from "react";
 import { Rect, Transformer } from "react-konva";
 
-import { resolveThemeValue, type VisualRectElement } from "@/schema/visual_scene";
+import { resolveThemeValue, type VisualRectElement } from "@/schema/visual_element";
 
 type EditableRectProps = {
   element: VisualRectElement;
@@ -21,6 +21,7 @@ export function EditableRect({
 }: EditableRectProps) {
   const shapeRef = useRef<Konva.Rect>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const isInteractive = element.editable !== false && element.locked !== true;
 
   useEffect(() => {
     if (!isSelected || !shapeRef.current || !transformerRef.current) {
@@ -43,16 +44,28 @@ export function EditableRect({
         stroke={element.stroke ? resolveThemeValue(element.stroke) : undefined}
         strokeWidth={element.strokeWidth}
         cornerRadius={element.cornerRadius}
-        draggable
+        draggable={isInteractive}
         onMouseDown={(event) => {
+          if (!isInteractive) {
+            return;
+          }
+
           event.cancelBubble = true; // 이벤트가 부모(Layer/Stage)로 퍼지는 것을 방지
           onSelectAction(); // 부모에게 선택된 상태임을 전달
         }}
         onTap={(event) => {
+          if (!isInteractive) {
+            return;
+          }
+
           event.cancelBubble = true;
           onSelectAction();
         }}
         onDragEnd={() => {
+          if (!isInteractive) {
+            return;
+          }
+
           const node = shapeRef.current;
 
           if (!node) {
@@ -66,6 +79,10 @@ export function EditableRect({
           });
         }}
         onTransformEnd={() => {
+          if (!isInteractive) {
+            return;
+          }
+
           const node = shapeRef.current;
 
           if (!node) {
@@ -88,7 +105,7 @@ export function EditableRect({
         }}
       />
 
-      {isSelected ? (
+      {isSelected && isInteractive ? (
         <Transformer
           ref={transformerRef}
           rotateEnabled={false}

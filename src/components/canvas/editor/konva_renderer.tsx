@@ -8,7 +8,7 @@ import {
   resolveThemeValue,
   type VisualElement,
   type VisualScene,
-} from "@/schema/visual_scene";
+} from "@/schema/visual_element";
 
 type KonvaRendererProps = {
   scene: VisualScene;

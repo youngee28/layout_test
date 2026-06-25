@@ -3,9 +3,9 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { stashUploadedScene } from "@/schema/uploaded_scene_storage";
+import { isCanvasScenePayload, stashUploadedScene } from "@/schema/uploaded_scene_storage";
 
-const fileTypes = ["CSV", "XLSX"] as const;
+const fileTypes = ["CSV"] as const;
 
 function isCsvFile(file: File) {
   return (
@@ -47,28 +47,41 @@ export function UploadCard() {
         throw new Error("업로드한 CSV 파일이 비어 있습니다.");
       }
 
-      const response = await fetch("/api/dashboard-candidates", {
+      const requestInit = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ csvText }),
+      } satisfies RequestInit;
+
+      const candidatesResult = await fetch("/api/dashboard-candidates", requestInit).then(async (response) => {
+        const data: unknown = await response.json();
+
+        if (!response.ok) {
+          const message =
+            typeof data === "object" && data !== null && "error" in data && typeof data.error === "string"
+              ? data.error
+              : "Dashboard candidate generation failed.";
+
+          throw new Error(message);
+        }
+
+        if (!isCanvasScenePayload(data)) {
+          throw new Error("Dashboard candidate response payload is not valid.");
+        }
+
+        return data;
       });
-      const data: unknown = await response.json();
 
-      if (!response.ok) {
-        const message =
-          typeof data === "object" && data !== null && "error" in data && typeof data.error === "string"
-            ? data.error
-            : "Scene generation failed.";
-
-        throw new Error(message);
-      }
-
-      stashUploadedScene(data);
+      stashUploadedScene({
+        resolvedTables: candidatesResult.resolvedTables,
+        dashboardCandidates: candidatesResult.dashboardCandidates,
+        generationStage: candidatesResult.generationStage ?? "candidates",
+      });
       router.push("/canvas");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Scene generation failed.");
+      setErrorMessage(error instanceof Error ? error.message : "Dashboard candidate generation failed.");
     } finally {
       setIsLoading(false);
     }
@@ -119,15 +132,15 @@ export function UploadCard() {
           </div>
 
           <div className="space-y-3">
-            <p className="text-2xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-3xl">
-              CSV, XLSX 파일을 업로드하세요
-            </p>
-            <p className="mx-auto max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
-              {isLoading
-                ? "CSV를 읽고 인포그래픽 후보 구성을 생성하는 중입니다. 완료되면 캔버스로 이동합니다."
-                : "클릭해서 CSV 파일을 선택하면 인포그래픽 방향의 대시보드 후보를 만든 뒤 캔버스로 이동합니다."}
-            </p>
-          </div>
+              <p className="text-2xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-3xl">
+                CSV 파일을 업로드하세요
+              </p>
+              <p className="mx-auto max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
+                {isLoading
+                  ? "CSV를 읽고 대시보드 후보를 생성하는 중입니다. 완료되면 캔버스로 이동합니다."
+                  : "클릭해서 CSV 파일을 선택하면 대시보드 후보를 생성합니다."}
+              </p>
+            </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             {fileTypes.map((fileType) => (

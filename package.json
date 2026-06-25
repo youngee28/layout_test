@@ -6,9 +6,7 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "generate:jsx": "bun src/scripts/generate-jsx.ts",
-    "generate:konva": "bun src/scripts/generate-konva.ts"
+    "lint": "eslint"
   },
   "dependencies": {
     "@google/genai": "^1.48.0",

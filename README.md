@@ -8,7 +8,7 @@ CSV 표 데이터를 업로드하면 Gemini로 인포그래픽용 씬 JSON을 �
 - 브라우저가 파일을 텍스트로 읽은 뒤 `POST /api/scene`으로 전송합니다.
 - 서버가 Gemini에 씬 생성을 요청하고, 응답을 정규화한 뒤 JSON으로 돌려줍니다.
 - 클라이언트가 생성된 씬을 `sessionStorage`에 저장하고 `/canvas`로 이동합니다.
-- `/canvas`는 업로드 직후 생성된 씬을 먼저 읽고, 없으면 개발용 fallback으로 `GET /api/scene`을 호출합니다.
+- `/canvas`는 업로드 직후 생성된 씬을 `sessionStorage`에서 읽어 편집합니다.
 
 ## Requirements
 
@@ -50,6 +50,7 @@ pnpm dev
 - 업로드 UI는 `src/components/home/upload-card.tsx`에 있습니다.
 - 현재 실제 생성 경로는 **CSV만 지원**합니다.
 - 파일은 브라우저에서 `file.text()`로 읽으며, 별도의 CSV 파싱 라이브러리는 사용하지 않습니다.
+- 업로드가 성공하면 홈 화면이 `POST /api/scene`을 호출하고, 생성된 씬을 저장한 뒤 `/canvas`로 이동합니다.
 
 ### 2. Generate a scene through `/api/scene`
 
@@ -60,14 +61,9 @@ pnpm dev
 - 서버는 CSV 원문을 프롬프트에 넣어 Gemini에 전달합니다.
 - Gemini 응답은 JSON으로 파싱한 뒤 앱이 지원하는 씬 구조로 정규화됩니다.
 
-`GET /api/scene`
-
-- 업로드 없이 `/canvas`를 열었을 때 사용하는 개발용 fallback 경로입니다.
-- 서버가 `input/data.csv`를 읽어서 같은 생성 로직을 실행합니다.
-
 ## Canvas behavior
 
-`/canvas`는 먼저 브라우저 `sessionStorage`에 저장된 업로드 결과를 읽습니다. 업로드 직후 이동한 경우에는 다시 생성 요청하지 않고 그 결과를 바로 렌더링합니다.
+`/canvas`는 브라우저 `sessionStorage`에 저장된 업로드 결과를 읽습니다. 업로드 직후 이동한 경우에는 다시 생성 요청하지 않고 그 결과를 바로 렌더링합니다. 업로드 데이터가 없으면 홈 화면에서 CSV를 먼저 올려야 합니다.
 
 현재 편집 가능한 요소 타입:
 
@@ -91,18 +87,6 @@ pnpm dev
 - `response_raw.json`
 - `response.json`
 
-## Development fallback setup
-
-업로드 없이 `/canvas` 경로를 직접 테스트하려면 `input/data.csv` 파일이 필요합니다.
-
-예시:
-
-```text
-input/data.csv
-```
-
-이 파일이 없으면 `GET /api/scene` fallback 경로는 실패합니다.
-
 ## Available scripts
 
 ```bash
@@ -110,11 +94,9 @@ pnpm dev
 pnpm build
 pnpm start
 pnpm lint
-pnpm generate:jsx
-pnpm generate:konva
 ```
 
-`generate:jsx`와 `generate:konva` 스크립트도 정의되어 있지만, 현재 웹앱의 주 사용자 흐름은 **CSV 업로드 → `/api/scene` 생성 → `/canvas` 편집**입니다.
+현재 웹앱의 주 사용자 흐름은 **CSV 업로드 → `/api/scene` 생성 → `/canvas` 편집**입니다.
 
 ## Current limitations
 

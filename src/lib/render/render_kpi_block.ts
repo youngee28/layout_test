@@ -1,6 +1,6 @@
 import type { ParsedDataset } from "@/lib/data/parse_csv";
 import type { DashboardBlock } from "@/schema/dashboard_spec";
-import type { VisualElement } from "@/schema/visual_scene";
+import type { VisualElement } from "@/schema/visual_element";
 
 function parseNumericValue(value: string | undefined): number | null {
   if (!value) {
@@ -72,7 +72,6 @@ export function renderKpiBlock(block: DashboardBlock, dataset: ParsedDataset): V
       stroke: "--border-strong",
       strokeWidth: 1,
       cornerRadius: 24,
-      role: "chartBackground",
       chartId: block.id,
       groupId: block.id,
       editable: true,
@@ -89,7 +88,6 @@ export function renderKpiBlock(block: DashboardBlock, dataset: ParsedDataset): V
       fontFamily: "--font-geist-sans",
       fontStyle: "bold",
       fill: "--text-primary",
-      role: "chartTitle",
       chartId: block.id,
       groupId: block.id,
       editable: true,
@@ -109,7 +107,6 @@ export function renderKpiBlock(block: DashboardBlock, dataset: ParsedDataset): V
       fontFamily: "--font-geist-sans",
       fontStyle: "bold",
       fill: "--accent-strong",
-      role: "dataLabel",
       chartId: block.id,
       groupId: block.id,
       dataRef: block.dataBinding?.valueField
@@ -133,7 +130,6 @@ export function renderKpiBlock(block: DashboardBlock, dataset: ParsedDataset): V
       fontFamily: "--font-geist-sans",
       fontStyle: "normal",
       fill: "--text-secondary",
-      role: "annotation",
       chartId: block.id,
       groupId: block.id,
       editable: true,
@@ -155,7 +151,6 @@ export function renderKpiBlock(block: DashboardBlock, dataset: ParsedDataset): V
       fontFamily: "--font-geist-sans",
       fontStyle: "normal",
       fill: "--text-secondary",
-      role: "annotation",
       chartId: block.id,
       groupId: block.id,
       editable: true,

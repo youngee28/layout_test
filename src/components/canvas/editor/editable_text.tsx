@@ -4,7 +4,7 @@ import Konva from "konva";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Text, Transformer } from "react-konva";
 
-import { resolveThemeValue, type VisualTextElement } from "@/schema/visual_scene";
+import { resolveThemeValue, type VisualTextElement } from "@/schema/visual_element";
 
 type EditableTextProps = {
   element: VisualTextElement;
@@ -28,8 +28,13 @@ export function EditableText({
   const [draft, setDraft] = useState(element.text);
   const [isEditing, setIsEditing] = useState(false);
   const [textareaStyle, setTextareaStyle] = useState<CSSProperties | null>(null);
+  const isInteractive = element.editable !== false && element.locked !== true;
 
   const startEditing = useCallback(() => {
+    if (!isInteractive) {
+      return;
+    }
+
     const node = textRef.current;
     const stage = node?.getStage();
 
@@ -65,7 +70,7 @@ export function EditableText({
       zIndex: 1000,
     });
     setIsEditing(true);
-  }, [element]);
+  }, [element, isInteractive]);
 
   useEffect(() => {
     if (!isSelected || isEditing || !textRef.current || !transformerRef.current) {
@@ -196,7 +201,7 @@ export function EditableText({
   }, [isSelected, isEditing, startEditing]);
 
   useEffect(() => {
-    if (!shouldAutoEdit || isEditing || !isSelected) {
+    if (!shouldAutoEdit || isEditing || !isSelected || !isInteractive) {
       return;
     }
 
@@ -208,7 +213,7 @@ export function EditableText({
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [shouldAutoEdit, isSelected, isEditing, startEditing, onClearPendingEditAction]);
+  }, [shouldAutoEdit, isSelected, isEditing, isInteractive, startEditing, onClearPendingEditAction]);
 
   return (
     <>
@@ -224,27 +229,47 @@ export function EditableText({
         fill={resolveThemeValue(element.fill)}
         align={element.align ?? "left"}
         lineHeight={1.2}
-        draggable
+        draggable={isInteractive}
         visible={!isEditing}
         onMouseDown={(event) => {
+          if (!isInteractive) {
+            return;
+          }
+
           event.cancelBubble = true;
           onSelectAction();
         }}
         onTap={(event) => {
+          if (!isInteractive) {
+            return;
+          }
+
           event.cancelBubble = true;
           onSelectAction();
         }}
         onDblClick={(event) => {
+          if (!isInteractive) {
+            return;
+          }
+
           event.cancelBubble = true;
           onSelectAction();
           startEditing();
         }}
         onDblTap={(event) => {
+          if (!isInteractive) {
+            return;
+          }
+
           event.cancelBubble = true;
           onSelectAction();
           startEditing();
         }}
         onDragEnd={() => {
+          if (!isInteractive) {
+            return;
+          }
+
           const node = textRef.current;
 
           if (!node) {
@@ -258,6 +283,10 @@ export function EditableText({
           });
         }}
         onTransformEnd={() => {
+          if (!isInteractive) {
+            return;
+          }
+
           const node = textRef.current;
 
           if (!node) {
@@ -278,7 +307,7 @@ export function EditableText({
         }}
       />
 
-      {isSelected && !isEditing ? (
+      {isSelected && !isEditing && isInteractive ? (
         <Transformer
           ref={transformerRef}
           rotateEnabled={false}

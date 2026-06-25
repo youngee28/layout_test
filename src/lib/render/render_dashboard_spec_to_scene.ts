@@ -6,7 +6,7 @@ import { renderLineChart } from "@/lib/render/render_line_chart";
 import { renderPieChart } from "@/lib/render/render_pie_chart";
 import type { DashboardBlock, DashboardSpec } from "@/schema/dashboard_spec";
 import type { ResolvedTable } from "@/schema/resolved_table";
-import type { CssVariableToken, VisualElement, VisualScene } from "@/schema/visual_scene";
+import type { CssVariableToken, VisualElement, VisualScene } from "@/schema/visual_element";
 
 type RenderDashboardSpecToSceneParams = {
   spec: DashboardSpec;
@@ -34,7 +34,6 @@ function renderTextBlock(block: DashboardBlock): VisualElement[] {
       fontFamily: "--font-geist-sans",
       fontStyle: block.role === "title" ? "bold" : "normal",
       fill: "--text-primary",
-      role: block.role === "title" ? "title" : "annotation",
       chartId: block.id,
       groupId: block.id,
       editable: true,
@@ -56,7 +55,6 @@ function renderNoteBlock(block: DashboardBlock): VisualElement[] {
       stroke: "--border-strong",
       strokeWidth: 1,
       cornerRadius: 20,
-      role: "decoration",
       chartId: block.id,
       groupId: block.id,
       editable: true,
@@ -72,14 +70,13 @@ function renderNoteBlock(block: DashboardBlock): VisualElement[] {
       y: block.layout.y + 16,
       width: Math.max(80, block.layout.width - 36),
       text: block.title,
-      fontSize: 16,
-      fontFamily: "--font-geist-sans",
-      fontStyle: "bold",
-      fill: "--text-primary",
-      role: "annotation",
-      chartId: block.id,
-      groupId: block.id,
-      editable: true,
+        fontSize: 16,
+        fontFamily: "--font-geist-sans",
+        fontStyle: "bold",
+        fill: "--text-primary",
+        chartId: block.id,
+        groupId: block.id,
+        editable: true,
       locked: false,
     });
   }
@@ -92,14 +89,13 @@ function renderNoteBlock(block: DashboardBlock): VisualElement[] {
       y: block.layout.y + (block.title ? 46 : 18),
       width: Math.max(80, block.layout.width - 36),
       text: block.message,
-      fontSize: 14,
-      fontFamily: "--font-geist-sans",
-      fontStyle: "normal",
-      fill: "--text-secondary",
-      role: "annotation",
-      chartId: block.id,
-      groupId: block.id,
-      editable: true,
+        fontSize: 14,
+        fontFamily: "--font-geist-sans",
+        fontStyle: "normal",
+        fill: "--text-secondary",
+        chartId: block.id,
+        groupId: block.id,
+        editable: true,
       locked: false,
     });
   }

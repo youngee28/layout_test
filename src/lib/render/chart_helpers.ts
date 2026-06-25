@@ -1,6 +1,6 @@
 import type { ParsedDataset } from "@/lib/data/parse_csv";
 import type { DashboardBlock } from "@/schema/dashboard_spec";
-import type { VisualElement, CssVariableToken } from "@/schema/visual_scene";
+import type { VisualElement, CssVariableToken } from "@/schema/visual_element";
 
 export function parseNumericValue(value: string | undefined): number | null {
   if (!value) {
@@ -255,7 +255,6 @@ export function chartBackground(block: DashboardBlock): VisualElement {
     stroke: "--border-strong",
     strokeWidth: 1,
     cornerRadius: 24,
-    role: "chartBackground",
     chartId: block.id,
     groupId: block.id,
     editable: true,
@@ -275,7 +274,6 @@ export function chartTitle(block: DashboardBlock): VisualElement {
     fontFamily: "--font-geist-sans",
     fontStyle: "bold",
     fill: "--text-primary",
-    role: "chartTitle",
     chartId: block.id,
     groupId: block.id,
     editable: true,
@@ -292,7 +290,6 @@ export function chartAxis(block: DashboardBlock, layout: ChartLayout): VisualEle
     width: layout.chartWidth,
     stroke: "--border-strong",
     strokeWidth: 2,
-    role: "axis",
     chartId: block.id,
     groupId: block.id,
     editable: true,
@@ -318,7 +315,6 @@ export function gridLines(
       width: layout.chartWidth,
       stroke: "--border-strong",
       strokeWidth: 1,
-      role: "grid",
       chartId: block.id,
       groupId: block.id,
       editable: true,

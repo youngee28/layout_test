@@ -1,5 +1,5 @@
 import { PreviewStage } from "@/components/canvas/editor/preview_stage";
-import { type VisualElement, type VisualScene } from "@/schema/visual_scene";
+import { type VisualElement, type VisualScene } from "@/schema/visual_element";
 
 type CenterPanelProps = {
   scene: VisualScene | null;
@@ -42,12 +42,12 @@ export function CenterPanel({
       ) : (
         <div className="rounded-[var(--radius-shell)] border border-[var(--border-subtle)] bg-[var(--surface-panel)] p-8 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-soft)] backdrop-blur-xl">
           <p className="font-semibold text-[var(--text-primary)]">
-            {generationStage === "candidates" ? "후보 구성이 준비되었습니다" : "Scene unavailable"}
+            {generationStage === "candidates" ? "캔버스 준비중" : "Scene unavailable"}
           </p>
           <p className="mt-2 leading-7">
             {generationStage === "candidates"
-              ? "좌측 대시보드 탭에서 인포그래픽 방향의 후보를 먼저 비교해 주세요. 이 단계에서는 아직 최종 캔버스 장면을 생성하지 않습니다."
-              : errorMessage ?? "The scene could not be generated from the uploaded CSV or input/data.csv."}
+              ? "대시보드 탭에서 인포그래픽 후보를 먼저 비교해 주세요. 아직 최종 캔버스 장면을 생성하지 않습니다."
+              : errorMessage ?? "Upload a CSV on the home page to generate a scene."}
           </p>
         </div>
       )}

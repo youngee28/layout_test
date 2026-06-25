@@ -1,9 +1,20 @@
 export type CssVariableToken = `--${string}`;
 
+export type VisualElementDataRef = {
+  rowKey?: string;
+  field?: string;
+  value?: string | number;
+};
+
 type VisualElementBase = {
   id: string;
   x: number;
   y: number;
+  chartId?: string;
+  groupId?: string;
+  dataRef?: VisualElementDataRef;
+  editable?: boolean;
+  locked?: boolean;
 };
 
 export type VisualTextElement = VisualElementBase & {
@@ -59,6 +70,35 @@ function isCssVariableToken(value: unknown): value is CssVariableToken {
   return typeof value === "string" && value.startsWith("--");
 }
 
+function isVisualElementDataRef(value: unknown): value is VisualElementDataRef {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const dataRef = value as Record<string, unknown>;
+
+  if (dataRef.rowKey === undefined && dataRef.field === undefined && dataRef.value === undefined) {
+    return false;
+  }
+
+  return (
+    (dataRef.rowKey === undefined || typeof dataRef.rowKey === "string") &&
+    (dataRef.field === undefined || typeof dataRef.field === "string") &&
+    (dataRef.value === undefined || typeof dataRef.value === "string" || typeof dataRef.value === "number")
+  );
+}
+
+function hasValidSharedElementFields(element: Record<string, unknown>): boolean {
+  return (
+    element.role === undefined &&
+    (element.chartId === undefined || typeof element.chartId === "string") &&
+    (element.groupId === undefined || typeof element.groupId === "string") &&
+    (element.dataRef === undefined || isVisualElementDataRef(element.dataRef)) &&
+    (element.editable === undefined || typeof element.editable === "boolean") &&
+    (element.locked === undefined || typeof element.locked === "boolean")
+  );
+}
+
 function isVisualElement(value: unknown): value is VisualElement {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -66,7 +106,12 @@ function isVisualElement(value: unknown): value is VisualElement {
 
   const element = value as Record<string, unknown>;
 
-  if (typeof element.id !== "string" || typeof element.x !== "number" || typeof element.y !== "number") {
+  if (
+    typeof element.id !== "string" ||
+    typeof element.x !== "number" ||
+    typeof element.y !== "number" ||
+    !hasValidSharedElementFields(element)
+  ) {
     return false;
   }
 
@@ -96,6 +141,7 @@ function isVisualElement(value: unknown): value is VisualElement {
   if (element.type === "line") {
     return (
       typeof element.width === "number" &&
+      element.points === undefined &&
       isCssVariableToken(element.stroke) &&
       typeof element.strokeWidth === "number"
     );

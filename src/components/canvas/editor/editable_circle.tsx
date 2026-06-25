@@ -4,7 +4,7 @@ import Konva from "konva";
 import { useEffect, useRef } from "react";
 import { Circle, Transformer } from "react-konva";
 
-import { resolveThemeValue, type VisualCircleElement } from "@/schema/visual_scene";
+import { resolveThemeValue, type VisualCircleElement } from "@/schema/visual_element";
 
 type EditableCircleProps = {
   element: VisualCircleElement;
@@ -21,6 +21,7 @@ export function EditableCircle({
 }: EditableCircleProps) {
   const shapeRef = useRef<Konva.Circle>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const isInteractive = element.editable !== false && element.locked !== true;
 
   useEffect(() => {
     if (!isSelected || !shapeRef.current || !transformerRef.current) {
@@ -41,16 +42,28 @@ export function EditableCircle({
         fill={resolveThemeValue(element.fill)}
         stroke={element.stroke ? resolveThemeValue(element.stroke) : undefined}
         strokeWidth={element.strokeWidth}
-        draggable
+        draggable={isInteractive}
         onMouseDown={(event) => {
+          if (!isInteractive) {
+            return;
+          }
+
           event.cancelBubble = true;
           onSelectAction();
         }}
         onTap={(event) => {
+          if (!isInteractive) {
+            return;
+          }
+
           event.cancelBubble = true;
           onSelectAction();
         }}
         onDragEnd={() => {
+          if (!isInteractive) {
+            return;
+          }
+
           const node = shapeRef.current;
 
           if (!node) {
@@ -64,6 +77,10 @@ export function EditableCircle({
           });
         }}
         onTransformEnd={() => {
+          if (!isInteractive) {
+            return;
+          }
+
           const node = shapeRef.current;
 
           if (!node) {
@@ -84,7 +101,7 @@ export function EditableCircle({
         }}
       />
 
-      {isSelected ? (
+      {isSelected && isInteractive ? (
         <Transformer
           ref={transformerRef}
           rotateEnabled={false}

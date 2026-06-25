@@ -23,7 +23,7 @@ export type DashboardCandidateBlockRole =
 
 export type DashboardCandidateBlockPriority = "high" | "medium" | "low";
 
-export type DashboardCandidateBlockType = "chart" | "metric" | "text" | "note";
+export type DashboardCandidateBlockType = "chart" | "metric" | "narrative";
 
 export type DashboardCandidatePreviewIcon =
   | "kpi"
@@ -49,7 +49,6 @@ export type DashboardCandidatePreviewBlock = {
 };
 
 export type DashboardCandidatePreview = {
-  headline?: string;
   chips: string[];
   blocks: DashboardCandidatePreviewBlock[];
 };
@@ -142,9 +141,15 @@ function asPriority(value: unknown): DashboardCandidateBlockPriority {
 }
 
 function asBlockType(value: unknown): DashboardCandidateBlockType {
-  return value === "chart" || value === "metric" || value === "text" || value === "note"
-    ? value
-    : "chart";
+  if (value === "chart" || value === "metric" || value === "narrative") {
+    return value;
+  }
+
+  if (value === "text" || value === "note") {
+    return "narrative";
+  }
+
+  return "chart";
 }
 
 function asChartType(value: unknown): DashboardCandidateBlock["chartType"] {
@@ -257,7 +262,6 @@ function normalizePreview(value: unknown): DashboardCandidatePreview | undefined
   }
 
   return {
-    headline: asString(raw.headline),
     chips: asStringArray(raw.chips),
     blocks,
   };

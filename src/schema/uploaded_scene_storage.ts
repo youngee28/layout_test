@@ -3,7 +3,7 @@ import { isChartRecommendation } from "@/schema/chart_recommendation";
 import type { DashboardCandidate } from "@/schema/dashboard_candidate";
 import { isDashboardCandidate } from "@/schema/dashboard_candidate";
 import type { ResolvedTable } from "@/schema/resolved_table";
-import { isVisualScene, type VisualScene } from "@/schema/visual_scene";
+import { isVisualScene, type VisualScene } from "@/schema/visual_element";
 
 const UPLOADED_SCENE_STORAGE_KEY = "uploaded-scene";
 

@@ -12,7 +12,7 @@ import {
   type ChartLayout,
 } from "@/lib/render/chart_helpers";
 import type { DashboardBlock } from "@/schema/dashboard_spec";
-import type { VisualElement } from "@/schema/visual_scene";
+import type { VisualElement } from "@/schema/visual_element";
 
 function createGridLayout(block: DashboardBlock) {
   const barLayout = computeBarChartLayout(block);
@@ -70,7 +70,6 @@ export function renderBarChart(block: DashboardBlock, dataset: ParsedDataset, _a
       width: layout.chartWidth,
       stroke: "--border-strong",
       strokeWidth: 2,
-      role: "axis",
       chartId: block.id,
       groupId: block.id,
       editable: true,
@@ -92,7 +91,6 @@ export function renderBarChart(block: DashboardBlock, dataset: ParsedDataset, _a
       fontStyle: "normal",
       fill: "--text-muted",
       align: "center",
-      role: "annotation",
       chartId: block.id,
       groupId: block.id,
       editable: true,
@@ -156,7 +154,6 @@ export function renderBarChart(block: DashboardBlock, dataset: ParsedDataset, _a
       height: constrainedBarHeight,
       fill: "--accent",
       cornerRadius: 10,
-      role: "dataMark",
       chartId: block.id,
       groupId: block.id,
       dataRef: {
@@ -181,7 +178,6 @@ export function renderBarChart(block: DashboardBlock, dataset: ParsedDataset, _a
         fontStyle: shouldPlaceInside ? "bold" : "normal",
         fill: shouldPlaceInside ? "--surface-card" : "--text-secondary",
         align: "center",
-        role: "dataLabel",
         chartId: block.id,
         groupId: block.id,
         dataRef: {
@@ -207,7 +203,6 @@ export function renderBarChart(block: DashboardBlock, dataset: ParsedDataset, _a
         fontStyle: "normal",
         fill: "--text-primary",
         align: "center",
-        role: "dataLabel",
         chartId: block.id,
         groupId: block.id,
         dataRef: {

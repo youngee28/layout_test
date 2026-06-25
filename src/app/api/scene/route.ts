@@ -1,10 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { config as loadEnv } from "dotenv";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
 import {
-  createSceneApiLogForGet,
   createSceneApiLogForPost,
   writeSceneApiLogRequestAndText,
   writeSceneApiLogResponseJson,
@@ -20,9 +17,6 @@ import { normalizeResolvedTablesResponse, type ResolvedTable } from "@/schema/re
 loadEnv({ path: ".env.local", override: false });
 loadEnv({ path: ".env", override: false });
 
-const PROJECT_ROOT = process.cwd();
-const INPUT_DIR = path.join(PROJECT_ROOT, "input");
-const CSV_PATH = path.join(INPUT_DIR, "data.csv");
 const DEFAULT_MODEL = "gemini-2.5-flash";
 
 const RESOLVED_TABLES_SCHEMA = {
@@ -123,24 +117,6 @@ const GENERATED_DASHBOARD_SPEC_SCHEMA = {
 } as const;
 
 export const dynamic = "force-dynamic";
-
-async function readRequiredFile(filePath: string, label: string): Promise<string> {
-  try {
-    const value = await readFile(filePath, "utf8");
-
-    if (!value.trim()) {
-      throw new Error(`${label} is empty: ${filePath}`);
-    }
-
-    return value;
-  } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      throw new Error(`${label} not found: ${filePath}`);
-    }
-
-    throw error;
-  }
-}
 
 function getApiKey(): string {
   const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
@@ -401,41 +377,6 @@ async function buildSceneFromCsv(csvText: string): Promise<{
     resolvedTables: resolvedTablesResult.tables,
     chartRecommendations,
   };
-}
-
-export async function GET() {
-  try {
-    const csvText = await readRequiredFile(CSV_PATH, "CSV input file");
-    const logContext = createSceneApiLogForGet({
-      source: path.relative(PROJECT_ROOT, CSV_PATH),
-      csvText,
-    });
-    const { responseText, dashboardSpec, normalizedScene, resolvedTables, chartRecommendations } = await buildSceneFromCsv(csvText);
-
-    void writeSceneApiLogRequestAndText({
-      ...logContext,
-      responseText,
-    });
-
-    void writeSceneApiLogResponseJson({
-      runId: logContext.runId,
-      responseJson: {
-        dashboardSpec,
-        resolvedTables,
-        chartRecommendations,
-        scene: normalizedScene,
-      },
-    });
-
-    return NextResponse.json({
-      scene: normalizedScene,
-      resolvedTables,
-      chartRecommendations,
-    });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
 }
 
 export async function POST(request: Request) {

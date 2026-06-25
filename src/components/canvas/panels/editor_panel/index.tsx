@@ -1,4 +1,4 @@
-import { type VisualTextElement } from "@/schema/visual_scene";
+import { type VisualTextElement } from "@/schema/visual_element";
 import { TextEditorPanel } from "./text_editor_panel";
 
 type EditorPanelProps = {

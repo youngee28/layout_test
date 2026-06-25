@@ -2,13 +2,12 @@ import {
   type VisualCircleElement,
   type CssVariableToken,
   type VisualElementDataRef,
-  type VisualElementRole,
   type VisualElement,
   type VisualLineElement,
   type VisualRectElement,
   type VisualScene,
   type VisualTextElement,
-} from "@/schema/visual_scene";
+} from "@/schema/visual_element";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -43,25 +42,6 @@ function asBoolean(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined;
 }
 
-function asRole(value: unknown): VisualElementRole | undefined {
-  if (
-    value === "title" ||
-    value === "chartTitle" ||
-    value === "chartBackground" ||
-    value === "dataMark" ||
-    value === "dataLabel" ||
-    value === "axis" ||
-    value === "grid" ||
-    value === "legend" ||
-    value === "annotation" ||
-    value === "decoration"
-  ) {
-    return value;
-  }
-
-  return undefined;
-}
-
 function asDataRef(value: unknown): VisualElementDataRef | undefined {
   const raw = asRecord(value);
 
@@ -86,7 +66,6 @@ function asDataRef(value: unknown): VisualElementDataRef | undefined {
 
 function getSharedElementFields(raw: UnknownRecord) {
   return {
-    role: asRole(raw.role),
     chartId: typeof raw.chartId === "string" ? raw.chartId : undefined,
     groupId: typeof raw.groupId === "string" ? raw.groupId : undefined,
     dataRef: asDataRef(raw.dataRef),
@@ -149,8 +128,6 @@ function normalizeRect(raw: UnknownRecord): VisualRectElement {
 }
 
 function normalizeLine(raw: UnknownRecord): VisualLineElement {
-  const rawPoints = Array.isArray(raw.points) ? raw.points.filter((point): point is number => typeof point === "number") : undefined;
-
   return {
     ...getSharedElementFields(raw),
     id: asString(raw.id, createId("line")),
@@ -158,7 +135,6 @@ function normalizeLine(raw: UnknownRecord): VisualLineElement {
     x: asNumber(raw.x, 64),
     y: asNumber(raw.y, 260),
     width: asNumber(raw.width ?? raw.w ?? raw.length, 220),
-    points: rawPoints && rawPoints.length >= 4 ? rawPoints : undefined,
     stroke: asToken(raw.stroke, "--accent"),
     strokeWidth: asNumber(raw.strokeWidth, 4),
   };
@@ -178,12 +154,24 @@ function normalizeCircle(raw: UnknownRecord): VisualCircleElement {
   };
 }
 
+function assertNoRemovedElementFields(raw: UnknownRecord) {
+  if (raw.role !== undefined) {
+    throw new Error("Scene payload no longer supports element.role.");
+  }
+
+  if (raw.points !== undefined) {
+    throw new Error("Scene payload no longer supports line.points.");
+  }
+}
+
 function normalizeElement(value: unknown): VisualElement | null {
   const raw = asRecord(value);
 
   if (!raw) {
     return null;
   }
+
+  assertNoRemovedElementFields(raw);
 
   const type = normalizeType(raw.type);
 
