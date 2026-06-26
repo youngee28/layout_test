@@ -1,3 +1,4 @@
+import { normalizeSvgPreview } from "@/lib/svg/normalize_svg_preview";
 import type { ChartType } from "@/schema/dashboard_spec";
 
 type UnknownRecord = Record<string, unknown>;
@@ -54,6 +55,13 @@ export type DashboardCandidatePreview = {
   blocks: DashboardCandidatePreviewBlock[];
 };
 
+export type DashboardCandidateSvgPreview = {
+  markup: string;
+  width: number;
+  height: number;
+  viewBox: string;
+};
+
 export type DashboardCandidateBlock = {
   id: string;
   title: string;
@@ -81,12 +89,16 @@ export type DashboardCandidate = {
   id: string;
   title: string;
   summary: string;
-  goal: string;
-  narrative: string;
-  sourceTableIds: string[];
-  viewpoints: DashboardCandidateViewpoint[];
-  layoutStrategy: string;
-  blocks: DashboardCandidateBlock[];
+  designIntent: string;
+  svgPreview?: DashboardCandidateSvgPreview;
+  usedFields?: string[];
+  notes?: string[];
+  goal?: string;
+  narrative?: string;
+  sourceTableIds?: string[];
+  viewpoints?: DashboardCandidateViewpoint[];
+  layoutStrategy?: string;
+  blocks?: DashboardCandidateBlock[];
   preview?: DashboardCandidatePreview;
 };
 
@@ -267,6 +279,26 @@ function normalizePreview(value: unknown): DashboardCandidatePreview | undefined
   };
 }
 
+function normalizeSvgPreviewValue(value: unknown): DashboardCandidateSvgPreview | undefined {
+  if (typeof value === "string") {
+    return normalizeSvgPreview(value) ?? undefined;
+  }
+
+  const raw = asRecord(value);
+
+  if (!raw) {
+    return undefined;
+  }
+
+  const markup = asString(raw.markup);
+
+  if (!markup) {
+    return undefined;
+  }
+
+  return normalizeSvgPreview(markup) ?? undefined;
+}
+
 function normalizeBlock(value: unknown, index: number): DashboardCandidateBlock | null {
   const raw = asRecord(value);
 
@@ -292,18 +324,20 @@ function normalizeBlock(value: unknown, index: number): DashboardCandidateBlock 
 export function isDashboardCandidate(input: unknown): input is DashboardCandidate {
   const raw = asRecord(input);
 
-  return Boolean(
-    raw &&
-      typeof raw.id === "string" &&
-      typeof raw.title === "string" &&
-      typeof raw.summary === "string" &&
-      typeof raw.goal === "string" &&
-      typeof raw.narrative === "string" &&
-      Array.isArray(raw.sourceTableIds) &&
-      Array.isArray(raw.viewpoints) &&
-      typeof raw.layoutStrategy === "string" &&
-      Array.isArray(raw.blocks),
-  );
+  if (
+    !raw ||
+    typeof raw.id !== "string" ||
+    typeof raw.title !== "string" ||
+    typeof raw.summary !== "string" ||
+    typeof raw.designIntent !== "string"
+  ) {
+    return false;
+  }
+
+  const hasValidSvgPreview = normalizeSvgPreviewValue(raw.svgPreview) !== undefined;
+  const hasValidBlocks = Array.isArray(raw.blocks);
+
+  return hasValidSvgPreview || hasValidBlocks;
 }
 
 export function normalizeDashboardCandidates(input: unknown): DashboardCandidate[] {
@@ -320,15 +354,18 @@ export function normalizeDashboardCandidates(input: unknown): DashboardCandidate
       }
 
       const title = asString(raw.title) ?? `Infographic candidate ${index + 1}`;
+      const designIntent = asString(raw.designIntent);
+
+      if (!designIntent) {
+        return null;
+      }
+
       const blocks = Array.isArray(raw.blocks)
         ? raw.blocks
             .map((block, blockIndex) => normalizeBlock(block, blockIndex))
             .filter((block): block is DashboardCandidateBlock => block !== null)
         : [];
-
-      if (blocks.length === 0) {
-        return null;
-      }
+      const svgPreview = normalizeSvgPreviewValue(raw.svgPreview ?? raw.svgMarkup);
 
       const viewpoints = Array.isArray(raw.viewpoints)
         ? raw.viewpoints
@@ -338,16 +375,24 @@ export function normalizeDashboardCandidates(input: unknown): DashboardCandidate
 
       const preview = normalizePreview(raw.preview);
 
+      if (!svgPreview && blocks.length === 0) {
+        return null;
+      }
+
       return {
         id: asString(raw.id) ?? `candidate-${index + 1}`,
         title,
         summary: asString(raw.summary) ?? `${title} 후보`,
-        goal: asString(raw.goal) ?? "핵심 메시지를 빠르게 전달하는 인포그래픽 구성을 제안합니다.",
-        narrative: asString(raw.narrative) ?? "핵심 인사이트를 먼저 보여주고 근거 블록으로 이어지는 구조입니다.",
-        sourceTableIds: asStringArray(raw.sourceTableIds),
-        viewpoints,
-        layoutStrategy: asString(raw.layoutStrategy) ?? "hero-first",
-        blocks,
+        designIntent,
+        ...(svgPreview ? { svgPreview } : {}),
+        ...(asStringArray(raw.usedFields).length > 0 ? { usedFields: asStringArray(raw.usedFields) } : {}),
+        ...(asStringArray(raw.notes).length > 0 ? { notes: asStringArray(raw.notes) } : {}),
+        ...(asString(raw.goal) ? { goal: asString(raw.goal) } : {}),
+        ...(asString(raw.narrative) ? { narrative: asString(raw.narrative) } : {}),
+        ...(asStringArray(raw.sourceTableIds).length > 0 ? { sourceTableIds: asStringArray(raw.sourceTableIds) } : {}),
+        ...(viewpoints.length > 0 ? { viewpoints } : {}),
+        ...(asString(raw.layoutStrategy) ? { layoutStrategy: asString(raw.layoutStrategy) } : {}),
+        ...(blocks.length > 0 ? { blocks } : {}),
         ...(preview ? { preview } : {}),
       } satisfies DashboardCandidate;
     })

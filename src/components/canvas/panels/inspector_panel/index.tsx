@@ -251,12 +251,13 @@ function getPreviewLabel(block: DashboardCandidateBlock): string {
 
 function getPreviewBlocks(candidate: DashboardPlanningCandidate): DashboardCandidatePreviewBlock[] {
   const previewBlocks = candidate.preview?.blocks ?? [];
+  const blocks = candidate.blocks ?? [];
 
   if (previewBlocks.length > 0) {
     return previewBlocks;
   }
 
-  return candidate.blocks.map((block) => ({
+  return blocks.map((block) => ({
     id: block.id,
     previewLabel: getPreviewLabel(block),
     previewIcon: getPreviewIcon(block),
@@ -464,9 +465,10 @@ function DashboardPanel({ resolvedTables, chartRecommendations }: { resolvedTabl
 function DashboardCandidatePanel({ dashboardCandidates }: { dashboardCandidates: DashboardPlanningCandidate[] }) {
   const candidates = useMemo(() => {
     return dashboardCandidates.map((candidate) => {
+      const blocks = candidate.blocks ?? [];
       const fields = Array.from(
         new Set(
-          candidate.blocks.flatMap((block) => [
+          blocks.flatMap((block) => [
             block.dataBinding?.categoryField,
             block.dataBinding?.valueField,
             block.dataBinding?.dateField,
@@ -474,17 +476,17 @@ function DashboardCandidatePanel({ dashboardCandidates }: { dashboardCandidates:
           ].filter((field): field is string => Boolean(field))),
         ),
       );
-      const chartTypes = Array.from(new Set(candidate.blocks.flatMap((block) => (block.chartType ? [block.chartType] : []))));
+      const chartTypes = Array.from(new Set(blocks.flatMap((block) => (block.chartType ? [block.chartType] : []))));
 
         return {
           id: candidate.id,
           title: candidate.title,
           summary: candidate.summary,
-          tableLabel: candidate.sourceTableIds.join(", ") || "연결 표 정보 없음",
-          blockCount: candidate.blocks.length,
+          tableLabel: candidate.sourceTableIds?.join(", ") || "연결 표 정보 없음",
+          blockCount: blocks.length,
         chartTypes,
         fields,
-        blocks: candidate.blocks.map((block) => ({
+        blocks: blocks.map((block) => ({
           id: block.id,
           title: block.title,
           chartType: block.chartType ?? block.type,

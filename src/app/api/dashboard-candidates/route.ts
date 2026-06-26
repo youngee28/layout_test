@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { createSceneApiLogForPost, writeSceneApiLogRequestAndText, writeSceneApiLogResponseJson } from "@/app/api/scene/api_log";
 import { buildResolvedTables } from "@/lib/data/build_resolved_tables";
 import { parseCsvGrid, type ParsedCsvGrid } from "@/lib/data/parse_csv";
-import { normalizeDashboardCandidates, type DashboardCandidate, type DashboardCandidateBlock } from "@/schema/dashboard_candidate";
+import { normalizeDashboardCandidates, type DashboardCandidate } from "@/schema/dashboard_candidate";
 import { normalizeResolvedTablesResponse, type ResolvedTable } from "@/schema/resolved_table";
 
 loadEnv({ path: ".env.local", override: false });
@@ -58,85 +58,18 @@ const DASHBOARD_CANDIDATES_SCHEMA = {
           id: { type: "string" },
           title: { type: "string" },
           summary: { type: "string" },
-          goal: { type: "string" },
-          narrative: { type: "string" },
-          sourceTableIds: { type: "array", items: { type: "string" } },
-          viewpoints: {
+          designIntent: { type: "string" },
+          svgMarkup: { type: "string" },
+          usedFields: {
             type: "array",
-            items: {
-              type: "string",
-              enum: ["comparison", "trend", "composition", "distribution", "flow", "correlation", "ranking", "highlight", "summary"],
-            },
+            items: { type: "string" },
           },
-          layoutStrategy: { type: "string" },
-          preview: {
-            type: "object",
-            properties: {
-              chips: {
-                type: "array",
-                items: { type: "string" },
-              },
-              blocks: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "string" },
-                    previewLabel: { type: "string" },
-                previewIcon: {
-                  type: "string",
-                  enum: ["kpi", "bar", "verticalBar", "horizontalBar", "groupedBar", "rankingBar", "line", "pie", "donut", "scatter"],
-                },
-                    role: { type: "string", enum: ["hero", "support", "evidence", "annotation", "detail", "closure"] },
-                    x: { type: "number" },
-                    y: { type: "number" },
-                    width: { type: "number" },
-                    height: { type: "number" },
-                  },
-                  required: ["id", "previewLabel", "previewIcon", "role", "x", "y", "width", "height"],
-                },
-              },
-            },
-            required: ["chips", "blocks"],
-          },
-          blocks: {
+          notes: {
             type: "array",
-            items: {
-              type: "object",
-              properties: {
-                id: { type: "string" },
-                title: { type: "string" },
-                description: { type: "string" },
-                role: { type: "string", enum: ["hero", "support", "evidence", "annotation", "detail", "closure"] },
-                priority: { type: "string", enum: ["high", "medium", "low"] },
-                type: { type: "string", enum: ["chart", "metric"] },
-                chartType: { type: "string", enum: ["bar", "verticalBar", "horizontalBar", "groupedBar", "rankingBar", "line", "pie", "donut", "scatter", "kpi"] },
-                dataBinding: {
-                  type: "object",
-                  properties: {
-                    tableId: { type: "string" },
-                    categoryField: { type: "string" },
-                    valueField: { type: "string" },
-                    dateField: { type: "string" },
-                    groupField: { type: "string" },
-                  },
-                },
-                layout: {
-                  type: "object",
-                  properties: {
-                    x: { type: "number" },
-                    y: { type: "number" },
-                    width: { type: "number" },
-                    height: { type: "number" },
-                  },
-                  required: ["x", "y", "width", "height"],
-                },
-              },
-              required: ["id", "title", "role", "priority", "type", "layout"],
-            },
+            items: { type: "string" },
           },
         },
-        required: ["id", "title", "summary", "goal", "narrative", "sourceTableIds", "viewpoints", "layoutStrategy", "preview", "blocks"],
+        required: ["id", "title", "summary", "designIntent", "svgMarkup"],
       },
     },
   },
@@ -209,44 +142,46 @@ function buildResolveTablesPrompt({ grid }: { grid: ParsedCsvGrid }): string {
 
 function buildDashboardCandidatesPrompt({ tables }: { tables: ResolvedTable[] }): string {
   return [
-    "당신은 최종 인포그래픽 생성을 위한 사전 대시보드 후보를 기획하는 정보디자인 전략가입니다.",
+    "당신은 고품질 인포그래픽 대시보드를 SVG로 직접 설계하는 시각 디자이너입니다.",
     "정확히 하나의 유효한 JSON 객체만 반환하세요. Markdown 코드 블록은 사용하지 마세요.",
-    "결과는 최종 BI 대시보드가 아니라 인포그래픽 방향성을 잡기 위한 후보여야 합니다.",
-    "표를 보고 핵심 메시지, 시선 흐름, 강조 우선순위를 먼저 생각하세요.",
-    "후보는 2개 이상 3개 이하로 만드세요.",
-    "단순히 비교형/추세형 같은 템플릿 이름으로 끝내지 말고, 실제 데이터의 핵심 메시지를 제목과 goal에 반영하세요.",
-    "각 후보는 title, summary, goal, narrative, sourceTableIds, viewpoints, layoutStrategy, preview, blocks를 가져야 합니다.",
-    "preview는 HTML/CSS 카드 미리보기를 위한 축약 레이아웃입니다.",
-    "preview.headline은 카드 상단 헤드라인입니다.",
-    "preview.chips는 짧은 태그 문자열 배열입니다.",
-    "preview.blocks는 3~6개의 축약 블록으로 구성하세요.",
-    "각 preview block에는 id, previewLabel, previewIcon, role, x, y, width, height를 포함하세요.",
-    "previewIcon은 kpi, bar, verticalBar, horizontalBar, groupedBar, rankingBar, line, pie, donut, scatter 중 하나여야 합니다.",
-    "previewLabel은 12자 이내로 짧게 작성하세요.",
-    "preview block 좌표는 미리보기용 0~100 좌표계입니다.",
-    "blocks는 인포그래픽용 정보 위계를 나타내야 하며 role은 hero/support/evidence/annotation/detail/closure 중 하나입니다.",
-    "priority는 high/medium/low 중 하나입니다.",
-    "blocks.type은 chart, metric 중 하나만 사용하세요. narrative는 절대 사용하지 마세요.",
-    "모든 블록은 KPI 또는 차트로만 구성하세요. 텍스트 설명 블록은 candidate의 summary/narrative에만 담고 blocks에는 포함하지 마세요.",
-    "차트 종류는 반드시 다양하게 분배하세요. 후보 하나당 최소 2가지 이상의 차트 종류를 사용하세요.",
-    "viewpoint에 따라 다음 차트를 우선적으로 사용하세요:",
-    "- comparison(비교): groupedBar 또는 horizontalBar",
-    "- trend(추세): line",
-    "- ranking(순위): rankingBar 또는 horizontalBar",
-    "- composition(구성): pie 또는 donut",
-    "- distribution(분포): scatter",
-    "- correlation(상관): scatter",
-    "- summary(요약): kpi",
-    "- highlight(강조): kpi",
-    "- flow(흐름): line 또는 bar",
-    "bar, verticalBar, rankingBar는 수직 막대 차트입니다. horizontalBar는 단일 series 수평 막대 차트입니다. groupedBar는 2개 이상 series를 가진 수평 막대 차트입니다.",
-    "groupedBar를 사용할 때는 categoryField(행정구역/카테고리)와 2개 이상의 valueField(또는 valueField + groupField)를 바인딩하여 여러 series를 표현하세요.",
-    "metric type일 때는 chartType을 kpi로 설정하세요. chart type일 때는 verticalBar/horizontalBar/groupedBar/rankingBar/line/pie/donut/scatter 중 하나를 설정하세요.",
-    "chartType은 반드시 명시하세요. type=chart인데 chartType이 없는 경우는 허용하지 않습니다.",
-    "dataBinding의 field명은 반드시 해당 table의 columns 안에서만 선택하세요.",
-    "layout은 미리보기용 0~100 좌표계입니다. x/y/width/height를 숫자로 넣고, 전체적으로 hero 블록이 먼저 보이도록 설계하세요.",
-    "블록 수는 과도하게 많지 않게 유지하고, 핵심 메시지 전달을 우선하세요.",
-    "summary는 80자 이내, goal은 80자 이내, narrative는 120자 이내로 작성하세요.",
+    "후보는 정확히 2개만 생성하세요.",
+    "각 후보는 title, summary, designIntent, svgMarkup, usedFields, notes를 가져야 합니다.",
+    "",
+    "중요: svgMarkup은 단순 차트가 아니라 하나의 완성형 SVG 대시보드 페이지여야 합니다.",
+    "SVG는 width='1122' height='1402' viewBox='0 0 1122 1402' 기준으로 작성하세요.",
+    "1122x1402 전체 캔버스를 적극적으로 사용하세요.",
+    "",
+    "각 SVG에는 반드시 다음이 포함되어야 합니다.",
+    "- 큰 제목",
+    "- 부제 또는 요약 문장",
+    "- KPI 카드 3개 이상",
+    "- 메인 차트 영역 1개",
+    "- 인사이트 카드 2~3개",
+    "- 출처/푸터 영역",
+    "",
+    "디자인 요구사항:",
+    "- 보고서형 인포그래픽 대시보드처럼 보여야 합니다.",
+    "- 카드형 패널, 라운드 박스, 그림자, 그라데이션, 아이콘형 도형, 큰 숫자 타이포그래피를 활용하세요.",
+    "- 단순 차트 하나, 표 하나, 중앙에 작은 그래프만 있는 SVG는 실패입니다.",
+    "- 회색 배경 위에 작은 차트만 올린 목업은 만들지 마세요.",
+    "- 전체 결과는 하나의 완성된 dashboard page처럼 보여야 합니다.",
+    "- 후보 2개는 서로 다른 레이아웃과 디자인 분위기를 가져야 합니다.",
+    "",
+    "SVG 안전 규칙:",
+    "- SVG 외부 HTML/CSS/JS를 만들지 마세요.",
+    "- script, foreignObject, iframe, image, use, animate, set을 사용하지 마세요.",
+    "- onClick, onLoad 등 이벤트 속성을 사용하지 마세요.",
+    "- 외부 URL, javascript:, href, xlink:href 외부 참조를 사용하지 마세요.",
+    "- style 태그, style 속성, class 속성을 사용하지 마세요.",
+    "- 모든 스타일은 fill, stroke, opacity, font-size, font-weight 등 SVG presentation attribute로 작성하세요.",
+    "- defs, linearGradient, radialGradient, stop, filter, feDropShadow, feGaussianBlur, feOffset, feColorMatrix는 사용할 수 있습니다.",
+    "- url(#id) 형태의 내부 참조만 허용됩니다.",
+    "",
+    "데이터 규칙:",
+    "- 입력 표에 없는 수치나 항목을 임의로 만들지 마세요.",
+    "- 차트와 KPI 숫자는 입력 표 데이터에 기반해야 합니다.",
+    "- usedFields에는 사용한 컬럼명을 넣으세요.",
+    "",
     "[확정된 표 정보]",
     JSON.stringify(
       tables.map((table) => ({
@@ -255,7 +190,7 @@ function buildDashboardCandidatesPrompt({ tables }: { tables: ResolvedTable[] })
         context: table.context,
         columns: table.columns,
         analysis: table.analysis,
-        rows: table.rows.slice(0, 20),
+        rows: table.rows.slice(0, 30),
       })),
       null,
       2,
@@ -294,176 +229,43 @@ async function resolveTablesWithApi({ grid }: { grid: ParsedCsvGrid }): Promise<
   };
 }
 
-function buildFallbackCandidates(tables: ResolvedTable[]): DashboardCandidate[] {
-  const firstTable = tables[0];
-  const numericColumn = firstTable
-    ? firstTable.columns.find((column) =>
-        firstTable.rows.some((row) => {
-          const value = row[column];
-          return value !== undefined && value !== "" && !Number.isNaN(Number(value.replace(/,/g, "")));
-        }),
-      ) ?? firstTable.columns[0]
-    : undefined;
-  const categoryColumn = firstTable
-    ? firstTable.columns.find((column) => column !== numericColumn) ?? firstTable.columns[0]
-    : undefined;
-
-  return [
-    {
-      id: "candidate-summary",
-      title: "핵심 지표 요약형",
-      summary: "주요 수치를 KPI로 강조하고 핵심 비교 차트를 함께 보여주는 구성입니다.",
-      goal: "가장 중요한 수치와 분포를 빠르게 파악할 수 있게 합니다.",
-      narrative: "핵심 KPI와 차트로만 구성된 대시보드 후보입니다.",
-      sourceTableIds: tables.map((table) => table.id),
-      viewpoints: ["summary", "highlight"],
-      layoutStrategy: "hero-kpi-chart",
-      preview: {
-        headline: "핵심 지표 요약",
-        chips: ["summary", "highlight"],
-        blocks: [
-          {
-            id: "fallback-preview-kpi-1",
-            previewLabel: "대표 KPI",
-            previewIcon: "kpi",
-            role: "hero",
-            x: 0,
-            y: 0,
-            width: 48,
-            height: 24,
-          },
-          {
-            id: "fallback-preview-kpi-2",
-            previewLabel: "보조 KPI",
-            previewIcon: "kpi",
-            role: "support",
-            x: 52,
-            y: 0,
-            width: 48,
-            height: 24,
-          },
-          {
-            id: "fallback-preview-chart",
-            previewLabel: "분포 차트",
-            previewIcon: firstTable ? "horizontalBar" : "kpi",
-            role: "evidence",
-            x: 0,
-            y: 28,
-            width: 100,
-            height: 48,
-          },
-        ],
-      },
-      blocks: [
-        {
-          id: "fallback-kpi-1",
-          title: "대표 KPI",
-          role: "hero",
-          priority: "high",
-          type: "metric",
-          chartType: "kpi",
-          dataBinding: firstTable
-            ? { tableId: firstTable.id, valueField: numericColumn }
-            : undefined,
-          layout: { x: 0, y: 0, width: 48, height: 24 },
-        },
-        {
-          id: "fallback-kpi-2",
-          title: "보조 KPI",
-          role: "support",
-          priority: "medium",
-          type: "metric",
-          chartType: "kpi",
-          dataBinding: firstTable
-            ? { tableId: firstTable.id, valueField: numericColumn }
-            : undefined,
-          layout: { x: 52, y: 0, width: 48, height: 24 },
-        },
-        ...(firstTable
-          ? [
-              {
-                id: "fallback-bar",
-                title: "카테고리별 비교",
-                role: "evidence",
-                priority: "high",
-                type: "chart",
-                chartType: "horizontalBar",
-                dataBinding: {
-                  tableId: firstTable.id,
-                  categoryField: categoryColumn,
-                  valueField: numericColumn,
-                },
-                layout: { x: 0, y: 28, width: 100, height: 48 },
-              } as const,
-            ]
-          : [
-              {
-                id: "fallback-kpi-3",
-                title: "추가 KPI",
-                role: "evidence",
-                priority: "medium",
-                type: "metric",
-                chartType: "kpi",
-                layout: { x: 0, y: 28, width: 100, height: 48 },
-              } as const,
-            ]),
-      ] as DashboardCandidateBlock[],
-    },
-  ];
-}
-
 async function generateDashboardCandidates({ tables }: { tables: ResolvedTable[] }): Promise<{ responseText: string; dashboardCandidates: DashboardCandidate[] }> {
   if (tables.length === 0) {
-    const dashboardCandidates = buildFallbackCandidates(tables);
-
-    return {
-      responseText: JSON.stringify({ candidates: dashboardCandidates }, null, 2),
-      dashboardCandidates,
-    };
+    throw new Error("표 정보를 찾지 못해 SVG 후보를 생성할 수 없습니다.");
   }
 
   const ai = new GoogleGenAI({ apiKey: getApiKey() });
   const model = process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
 
-  try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: buildDashboardCandidatesPrompt({ tables }),
-      config: {
-        responseMimeType: "application/json",
-        responseJsonSchema: DASHBOARD_CANDIDATES_SCHEMA,
-      },
-    });
+  const response = await ai.models.generateContent({
+    model,
+    contents: buildDashboardCandidatesPrompt({ tables }),
+    config: {
+      responseMimeType: "application/json",
+      responseJsonSchema: DASHBOARD_CANDIDATES_SCHEMA,
+    },
+  });
 
-    const responseText = response.text;
+  const responseText = response.text;
 
-    if (!responseText) {
-      throw new Error("Gemini response did not include dashboard candidate output.");
-    }
-
-    const parsed = parseGeneratedJson(responseText);
-    const dashboardCandidates = normalizeDashboardCandidates(
-      typeof parsed === "object" && parsed !== null && "candidates" in parsed
-        ? (parsed as { candidates: unknown }).candidates
-        : [],
-    );
-
-    if (dashboardCandidates.length > 0) {
-      return {
-        responseText,
-        dashboardCandidates,
-      };
-    }
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(`[dashboard-candidates] Falling back to deterministic candidates: ${message}`);
+  if (!responseText) {
+    throw new Error("Gemini response did not include dashboard candidate output.");
   }
 
-  const fallbackCandidates = buildFallbackCandidates(tables);
+  const parsed = parseGeneratedJson(responseText);
+  const dashboardCandidates = normalizeDashboardCandidates(
+    typeof parsed === "object" && parsed !== null && "candidates" in parsed
+      ? (parsed as { candidates: unknown }).candidates
+      : [],
+  ).filter((candidate) => Boolean(candidate.svgPreview));
+
+  if (dashboardCandidates.length === 0) {
+    throw new Error("유효한 SVG 후보를 생성하지 못했습니다.");
+  }
 
   return {
-    responseText: JSON.stringify({ candidates: fallbackCandidates }, null, 2),
-    dashboardCandidates: fallbackCandidates,
+    responseText,
+    dashboardCandidates,
   };
 }
 
