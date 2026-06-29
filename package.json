@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@google/genai": "^1.48.0",
     "dotenv": "^17.4.1",
     "konva": "^10.2.3",
     "lucide-react": "^1.7.0",

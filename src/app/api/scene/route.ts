@@ -1,13 +1,12 @@
-import { GoogleGenAI } from "@google/genai";
 import { config as loadEnv } from "dotenv";
 import { NextResponse } from "next/server";
 import {
   createSceneApiLogForPost,
-  writeSceneApiLogRequestAndText,
   writeSceneApiLogResponseJson,
 } from "@/app/api/scene/api_log";
 import { buildResolvedTables } from "@/lib/data/build_resolved_tables";
 import { parseCsvGrid, type ParsedCsvGrid } from "@/lib/data/parse_csv";
+import { generateJsonText } from "@/lib/ai/gpt_client";
 import { renderDashboardSpecToScene } from "@/lib/render/render_dashboard_spec_to_scene";
 import { createChartRecommendations, type ChartRecommendation } from "@/schema/chart_recommendation";
 import { normalizeDashboardSpec, type DashboardSpec } from "@/schema/dashboard_spec";
@@ -16,8 +15,6 @@ import { normalizeResolvedTablesResponse, type ResolvedTable } from "@/schema/re
 
 loadEnv({ path: ".env.local", override: false });
 loadEnv({ path: ".env", override: false });
-
-const DEFAULT_MODEL = "gemini-2.5-flash";
 
 const RESOLVED_TABLES_SCHEMA = {
   type: "object",
@@ -118,16 +115,6 @@ const GENERATED_DASHBOARD_SPEC_SCHEMA = {
 
 export const dynamic = "force-dynamic";
 
-function getApiKey(): string {
-  const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("Missing Gemini API key. Set GEMINI_API_KEY or GOOGLE_API_KEY.");
-  }
-
-  return apiKey;
-}
-
 function buildResolveTablesPrompt({ grid }: { grid: ParsedCsvGrid }): string {
   return [
     "당신은 CSV grid를 읽고 표/메모/메타데이터 영역을 분리하는 문서 구조 해석기입니다.",
@@ -196,7 +183,7 @@ function parseGeneratedJson(text: string): unknown {
   let normalized = text.trim();
 
   if (!normalized) {
-    throw new Error("Gemini returned an empty response.");
+    throw new Error("GPT returned an empty response.");
   }
 
   if (normalized.startsWith("```")) {
@@ -225,33 +212,22 @@ function getCsvTextFromBody(body: unknown): string {
 }
 
 type ResolveTablesResult = {
-  responseText: string;
   tables: ResolvedTable[];
 };
 
 type DashboardSpecResult = {
-  responseText: string;
   dashboardSpec: DashboardSpec;
 };
 
 async function resolveTablesWithApi({ grid }: { grid: ParsedCsvGrid }): Promise<ResolveTablesResult> {
-  const apiKey = getApiKey();
-  const model = process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
-  const ai = new GoogleGenAI({ apiKey });
-
-  const response = await ai.models.generateContent({
-    model,
-    contents: buildResolveTablesPrompt({ grid }),
-    config: {
-      responseMimeType: "application/json",
-      responseJsonSchema: RESOLVED_TABLES_SCHEMA,
-    },
+  const responseText = await generateJsonText({
+    prompt: buildResolveTablesPrompt({ grid }),
+    schemaName: "resolved_tables_response",
+    responseJsonSchema: RESOLVED_TABLES_SCHEMA,
   });
 
-  const responseText = response.text;
-
   if (!responseText) {
-    throw new Error("Gemini response did not include resolved tables output.");
+    throw new Error("GPT response did not include resolved tables output.");
   }
 
   const parsed = parseGeneratedJson(responseText);
@@ -261,7 +237,6 @@ async function resolveTablesWithApi({ grid }: { grid: ParsedCsvGrid }): Promise<
   );
 
   return {
-    responseText,
     tables: buildResolvedTables({ grid, resolvedTables: tables }),
   };
 }
@@ -314,40 +289,28 @@ async function generateDashboardSpec({ tables }: { tables: ResolvedTable[] }): P
     const dashboardSpec = buildFallbackDashboardSpec(tables);
 
     return {
-      responseText: JSON.stringify(dashboardSpec, null, 2),
       dashboardSpec,
     };
   }
 
-  const apiKey = getApiKey();
-  const model = process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
-  const ai = new GoogleGenAI({ apiKey });
-
-  const response = await ai.models.generateContent({
-    model,
-    contents: buildDashboardSpecPrompt({ tables }),
-    config: {
-      responseMimeType: "application/json",
-      responseJsonSchema: GENERATED_DASHBOARD_SPEC_SCHEMA,
-    },
+  const responseText = await generateJsonText({
+    prompt: buildDashboardSpecPrompt({ tables }),
+    schemaName: "dashboard_spec_response",
+    responseJsonSchema: GENERATED_DASHBOARD_SPEC_SCHEMA,
   });
 
-  const responseText = response.text;
-
   if (!responseText) {
-    throw new Error("Gemini response did not include dashboard spec output.");
+    throw new Error("GPT response did not include dashboard spec output.");
   }
 
   const responseJson = parseGeneratedJson(responseText);
 
   return {
-    responseText,
     dashboardSpec: normalizeDashboardSpec(responseJson),
   };
 }
 
 async function buildSceneFromCsv(csvText: string): Promise<{
-  responseText: string;
   dashboardSpec: DashboardSpec;
   normalizedScene: ReturnType<typeof normalizeScene>;
   resolvedTables: ResolvedTable[];
@@ -364,14 +327,6 @@ async function buildSceneFromCsv(csvText: string): Promise<{
   const chartRecommendations = createChartRecommendations(dashboardSpecResult.dashboardSpec);
 
   return {
-    responseText: JSON.stringify(
-      {
-        resolvedTables: resolvedTablesResult.responseText,
-        dashboardSpec: dashboardSpecResult.responseText,
-      },
-      null,
-      2,
-    ),
     dashboardSpec: dashboardSpecResult.dashboardSpec,
     normalizedScene,
     resolvedTables: resolvedTablesResult.tables,
@@ -384,12 +339,7 @@ export async function POST(request: Request) {
     const body: unknown = await request.json();
     const csvText = getCsvTextFromBody(body);
     const logContext = createSceneApiLogForPost({ body });
-    const { responseText, dashboardSpec, normalizedScene, resolvedTables, chartRecommendations } = await buildSceneFromCsv(csvText);
-
-    void writeSceneApiLogRequestAndText({
-      ...logContext,
-      responseText,
-    });
+    const { dashboardSpec, normalizedScene, resolvedTables, chartRecommendations } = await buildSceneFromCsv(csvText);
 
     void writeSceneApiLogResponseJson({
       runId: logContext.runId,

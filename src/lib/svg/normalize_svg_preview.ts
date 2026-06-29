@@ -3,6 +3,9 @@ import { sanitizeSvg } from "@/lib/svg/sanitize_svg";
 const DEFAULT_WIDTH = 1122;
 const DEFAULT_HEIGHT = 1402;
 const DEFAULT_VIEW_BOX = "0 0 1122 1402";
+const SVG_XMLNS = "http://www.w3.org/2000/svg";
+const SVG_OPEN_TAG_PATTERN = /<svg\b([^>]*)>/i;
+const XMLNS_ATTRIBUTE_PATTERN = /\s+xmlns\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i;
 
 type SvgPreview = {
   markup: string;
@@ -43,6 +46,16 @@ function extractViewBox(tag: string) {
   return parts.join(" ");
 }
 
+function normalizeSvgRootNamespace(markup: string): string {
+  return markup.replace(SVG_OPEN_TAG_PATTERN, (_match, attributes: string) => {
+    const normalizedAttributes = XMLNS_ATTRIBUTE_PATTERN.test(attributes)
+      ? attributes.replace(XMLNS_ATTRIBUTE_PATTERN, ` xmlns="${SVG_XMLNS}"`)
+      : ` xmlns="${SVG_XMLNS}"${attributes}`;
+
+    return `<svg${normalizedAttributes}>`;
+  });
+}
+
 export function normalizeSvgPreview(markup: string): SvgPreview | null {
   const sanitized = sanitizeSvg(markup);
 
@@ -50,7 +63,8 @@ export function normalizeSvgPreview(markup: string): SvgPreview | null {
     return null;
   }
 
-  const rootTag = sanitized.match(/<svg\b[^>]*>/i)?.[0];
+  const normalizedMarkup = normalizeSvgRootNamespace(sanitized);
+  const rootTag = normalizedMarkup.match(/<svg\b[^>]*>/i)?.[0];
 
   if (!rootTag) {
     return null;
@@ -61,7 +75,7 @@ export function normalizeSvgPreview(markup: string): SvgPreview | null {
   const viewBox = extractViewBox(rootTag) ?? DEFAULT_VIEW_BOX;
 
   return {
-    markup: sanitized,
+    markup: normalizedMarkup,
     width,
     height,
     viewBox,

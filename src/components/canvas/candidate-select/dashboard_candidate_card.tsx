@@ -20,7 +20,7 @@ export function DashboardCandidateCard({
 }: DashboardCandidateCardProps) {
   const sanitizedSvgMarkup = useMemo(() => {
     return candidate.svgPreview?.markup ? sanitizeSvg(candidate.svgPreview.markup) : null;
-  }, [candidate.svgPreview?.markup]);
+  }, [candidate.svgPreview]);
 
   const fallbackBlocks = candidate.blocks ?? [];
 
@@ -61,7 +61,7 @@ export function DashboardCandidateCard({
         )}
       </div>
 
-      {candidate.usedFields && candidate.usedFields.length > 0 ? (
+      {/* {candidate.usedFields && candidate.usedFields.length > 0 ? (
         <div className="flex flex-wrap gap-2 text-[11px] text-[var(--text-secondary)]">
           {candidate.usedFields.map((field) => (
             <span key={field} className="rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-2 py-1">
@@ -69,7 +69,7 @@ export function DashboardCandidateCard({
             </span>
           ))}
         </div>
-      ) : null}
+      ) : null} */}
     </article>
   );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { DataTablePanel } from "@/components/canvas/candidate-select/data_table_panel";
 import { CandidateGrid } from "@/components/canvas/candidate-select/candidate_grid";
 import type { DashboardCandidate } from "@/schema/dashboard_candidate";
 import type { ResolvedTable } from "@/schema/resolved_table";
