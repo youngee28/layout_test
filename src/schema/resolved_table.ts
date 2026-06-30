@@ -4,6 +4,15 @@ import type { ParsedCsvGrid } from "@/lib/data/parse_csv";
 type UnknownRecord = Record<string, unknown>;
 
 export type ResolvedTableKind = "table" | "note" | "metadata" | "titleBlock";
+export type ResolvedTableShape =
+  | "records"
+  | "metricList"
+  | "timeSeries"
+  | "ranking"
+  | "categoryBreakdown"
+  | "crossTab"
+  | "funnel"
+  | "lookup";
 
 export type ResolvedTableRange = {
   startRow: number;
@@ -15,6 +24,7 @@ export type ResolvedTableRange = {
 export type ApiResolvedTable = {
   id: string;
   kind: ResolvedTableKind;
+  tableShape: ResolvedTableShape | null;
   title?: string;
   context?: string;
   range: ResolvedTableRange;
@@ -23,6 +33,33 @@ export type ApiResolvedTable = {
   dataEndRow: number | null;
   confidence: number;
   reason?: string;
+};
+
+export type ResolvedDocumentTableContext = {
+  tableId: string;
+  description?: string;
+};
+
+export type ResolvedDocumentRelationshipType =
+  | "cross_table"
+  | "supporting_context"
+  | "independent"
+  | "shared_subject"
+  | "breakdown";
+
+export type ResolvedDocumentTableRelationship = {
+  tableIds: string[];
+  type: ResolvedDocumentRelationshipType;
+  description: string;
+  confidence: number;
+  usableForCombinedDashboard: boolean;
+};
+
+export type ResolvedDocumentContext = {
+  title?: string;
+  summary?: string;
+  tableContexts: ResolvedDocumentTableContext[];
+  relationships: ResolvedDocumentTableRelationship[];
 };
 
 export type ResolvedTable = ApiResolvedTable & {
@@ -50,6 +87,39 @@ function asConfidence(value: unknown): number {
 
 function asKind(value: unknown): ResolvedTableKind | null {
   return value === "table" || value === "note" || value === "metadata" || value === "titleBlock" ? value : null;
+}
+
+function asTableShape(value: unknown): ResolvedTableShape | null {
+  return value === "records" ||
+    value === "metricList" ||
+    value === "timeSeries" ||
+    value === "ranking" ||
+    value === "categoryBreakdown" ||
+    value === "crossTab" ||
+    value === "funnel" ||
+    value === "lookup"
+    ? value
+    : null;
+}
+
+function asRelationshipType(value: unknown): ResolvedDocumentRelationshipType {
+  return value === "cross_table" ||
+    value === "supporting_context" ||
+    value === "independent" ||
+    value === "shared_subject" ||
+    value === "breakdown"
+    ? value
+    : "independent";
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => asString(entry))
+    .filter((entry): entry is string => Boolean(entry));
 }
 
 function normalizeRange(value: unknown, grid: ParsedCsvGrid): ResolvedTableRange | null {
@@ -141,6 +211,7 @@ export function normalizeResolvedTablesResponse(input: unknown, grid: ParsedCsvG
     tables.push({
       id: asString(raw.id) ?? `table-${index + 1}`,
       kind,
+      tableShape: kind === "table" ? (asTableShape(raw.tableShape) ?? "records") : null,
       title: asString(raw.title),
       context: asString(raw.context),
       range,
@@ -155,4 +226,60 @@ export function normalizeResolvedTablesResponse(input: unknown, grid: ParsedCsvG
   return tables.sort(
     (left, right) => left.range.startRow - right.range.startRow || left.range.startCol - right.range.startCol,
   );
+}
+
+export function normalizeResolvedDocumentContext(input: unknown): ResolvedDocumentContext {
+  const raw = asRecord(input);
+
+  if (!raw) {
+    return {
+      tableContexts: [],
+      relationships: [],
+    };
+  }
+
+  const rawTableContexts = Array.isArray(raw.tableContexts) ? raw.tableContexts : [];
+  const tableContexts = rawTableContexts.flatMap((entry): ResolvedDocumentTableContext[] => {
+    const context = asRecord(entry);
+    const tableId = context ? asString(context.tableId) : undefined;
+
+    if (!context || !tableId) {
+      return [];
+    }
+
+    return [
+      {
+        tableId,
+        description: asString(context.description),
+      },
+    ];
+  });
+
+  const rawRelationships = Array.isArray(raw.relationships) ? raw.relationships : [];
+  const relationships = rawRelationships.flatMap((entry): ResolvedDocumentTableRelationship[] => {
+    const relationship = asRecord(entry);
+    const tableIds = relationship ? asStringArray(relationship.tableIds) : [];
+    const description = relationship ? asString(relationship.description) : undefined;
+
+    if (!relationship || tableIds.length === 0 || !description) {
+      return [];
+    }
+
+    return [
+      {
+        tableIds,
+        type: asRelationshipType(relationship.type),
+        description,
+        confidence: asConfidence(relationship.confidence),
+        usableForCombinedDashboard: relationship.usableForCombinedDashboard === true,
+      },
+    ];
+  });
+
+  return {
+    title: asString(raw.title),
+    summary: asString(raw.summary),
+    tableContexts,
+    relationships,
+  };
 }

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   createSceneApiLogForPost,
   writeSceneApiLogResponseJson,
+  writeSceneApiLogStage,
 } from "@/app/api/scene/api_log";
 import { buildResolvedTables } from "@/lib/data/build_resolved_tables";
 import { parseCsvGrid, type ParsedCsvGrid } from "@/lib/data/parse_csv";
@@ -26,6 +27,20 @@ const RESOLVED_TABLES_SCHEMA = {
         properties: {
           id: { type: "string" },
           kind: { type: "string", enum: ["table", "note", "metadata", "titleBlock"] },
+          tableShape: {
+            type: ["string", "null"],
+            enum: [
+              "records",
+              "metricList",
+              "timeSeries",
+              "ranking",
+              "categoryBreakdown",
+              "crossTab",
+              "funnel",
+              "lookup",
+              null,
+            ],
+          },
           title: { type: "string" },
           context: { type: "string" },
           range: {
@@ -44,7 +59,7 @@ const RESOLVED_TABLES_SCHEMA = {
           confidence: { type: "number" },
           reason: { type: "string" },
         },
-        required: ["id", "kind", "range", "confidence"],
+        required: ["id", "kind", "tableShape", "range", "confidence"],
       },
     },
   },
@@ -123,6 +138,17 @@ function buildResolveTablesPrompt({ grid }: { grid: ParsedCsvGrid }): string {
     "셀 값 자체를 복사/변형하지 말고, 영역 좌표와 의미만 판정하세요.",
     "kind는 table, note, metadata, titleBlock 중 하나여야 합니다.",
     "실제 데이터 표만 kind=table로 반환하세요.",
+    "kind=table이면 tableShape를 반드시 지정하세요.",
+    "kind가 table이 아니면 tableShape는 null로 반환하세요.",
+    "tableShape는 records, metricList, timeSeries, ranking, categoryBreakdown, crossTab, funnel, lookup 중 하나입니다.",
+    "records: 일반 행 단위 데이터입니다.",
+    "metricList: 지표명-값 형태의 KPI 목록입니다.",
+    "timeSeries: 날짜/기간 축이 명확한 시계열입니다.",
+    "ranking: 순위 또는 Top-N 구조입니다.",
+    "categoryBreakdown: 하나의 전체를 범주별로 분해한 구조입니다.",
+    "crossTab: 행/열 양쪽이 의미 있는 피벗형 표입니다.",
+    "funnel: 단계별 전환/감소 흐름입니다.",
+    "lookup: 코드/명칭/설명 매핑용 보조 표입니다.",
     "kind=table이면 headerRow, dataStartRow, dataEndRow를 반드시 지정하세요.",
     "headerRow는 dataStartRow보다 반드시 작아야 합니다.",
     "한 table은 하나의 연속된 직사각형 범위(range)만 가져야 합니다.",
@@ -167,6 +193,7 @@ function buildDashboardSpecPrompt({ tables }: { tables: ResolvedTable[] }): stri
     JSON.stringify(
       tables.map((table) => ({
         id: table.id,
+        tableShape: table.tableShape,
         title: table.title,
         context: table.context,
         columns: table.columns,
@@ -219,9 +246,16 @@ type DashboardSpecResult = {
   dashboardSpec: DashboardSpec;
 };
 
-async function resolveTablesWithApi({ grid }: { grid: ParsedCsvGrid }): Promise<ResolveTablesResult> {
+async function resolveTablesWithApi({
+  grid,
+  apiLogRunId,
+}: {
+  grid: ParsedCsvGrid;
+  apiLogRunId?: string;
+}): Promise<ResolveTablesResult> {
+  const prompt = buildResolveTablesPrompt({ grid });
   const responseText = await generateJsonText({
-    prompt: buildResolveTablesPrompt({ grid }),
+    prompt,
     schemaName: "resolved_tables_response",
     responseJsonSchema: RESOLVED_TABLES_SCHEMA,
   });
@@ -235,9 +269,20 @@ async function resolveTablesWithApi({ grid }: { grid: ParsedCsvGrid }): Promise<
     typeof parsed === "object" && parsed !== null && "tables" in parsed ? (parsed as { tables: unknown }).tables : [],
     grid,
   );
+  const resolvedTables = buildResolvedTables({ grid, resolvedTables: tables });
+
+  if (apiLogRunId) {
+    await writeSceneApiLogStage({
+      runId: apiLogRunId,
+      stageName: "01",
+      responseJson: {
+        resolvedTables,
+      },
+    });
+  }
 
   return {
-    tables: buildResolvedTables({ grid, resolvedTables: tables }),
+    tables: resolvedTables,
   };
 }
 
@@ -310,14 +355,20 @@ async function generateDashboardSpec({ tables }: { tables: ResolvedTable[] }): P
   };
 }
 
-async function buildSceneFromCsv(csvText: string): Promise<{
+async function buildSceneFromCsv({
+  csvText,
+  apiLogRunId,
+}: {
+  csvText: string;
+  apiLogRunId?: string;
+}): Promise<{
   dashboardSpec: DashboardSpec;
   normalizedScene: ReturnType<typeof normalizeScene>;
   resolvedTables: ResolvedTable[];
   chartRecommendations: ChartRecommendation[];
 }> {
   const grid = parseCsvGrid(csvText);
-  const resolvedTablesResult = await resolveTablesWithApi({ grid });
+  const resolvedTablesResult = await resolveTablesWithApi({ grid, apiLogRunId });
   const dashboardSpecResult = await generateDashboardSpec({ tables: resolvedTablesResult.tables });
   const scene = renderDashboardSpecToScene({
     spec: dashboardSpecResult.dashboardSpec,
@@ -339,7 +390,10 @@ export async function POST(request: Request) {
     const body: unknown = await request.json();
     const csvText = getCsvTextFromBody(body);
     const logContext = createSceneApiLogForPost({ body });
-    const { dashboardSpec, normalizedScene, resolvedTables, chartRecommendations } = await buildSceneFromCsv(csvText);
+    const { dashboardSpec, normalizedScene, resolvedTables, chartRecommendations } = await buildSceneFromCsv({
+      csvText,
+      apiLogRunId: logContext.runId,
+    });
 
     void writeSceneApiLogResponseJson({
       runId: logContext.runId,

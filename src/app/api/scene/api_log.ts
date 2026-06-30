@@ -25,6 +25,12 @@ type WriteSceneApiLogResponseJsonInput = {
   responseJson: unknown;
 };
 
+type WriteSceneApiLogStageInput = {
+  readonly runId: string;
+  readonly stageName: string;
+  readonly responseJson: unknown;
+};
+
 type SceneApiLogContext = {
   runId: string;
   requestPayload: unknown;
@@ -131,5 +137,24 @@ export async function writeSceneApiLogResponseJson({
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`[API_LOG] Failed to write response JSON for ${runId}: ${message}`);
+  }
+}
+
+export async function writeSceneApiLogStage({
+  runId,
+  stageName,
+  responseJson,
+}: WriteSceneApiLogStageInput): Promise<void> {
+  if (!isFileLoggingEnabled) {
+    return;
+  }
+
+  try {
+    const runDir = await ensureRunDirectory(runId);
+
+    await writeFile(path.join(runDir, `${stageName}_response.json`), `${JSON.stringify(responseJson, null, 2)}\n`, "utf8");
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[API_LOG] Failed to write stage response for ${runId}/${stageName}: ${message}`);
   }
 }

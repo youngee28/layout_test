@@ -2,13 +2,14 @@ import type { ChartRecommendation } from "@/schema/chart_recommendation";
 import { isChartRecommendation } from "@/schema/chart_recommendation";
 import type { DashboardCandidate } from "@/schema/dashboard_candidate";
 import { isDashboardCandidate } from "@/schema/dashboard_candidate";
-import type { ResolvedTable } from "@/schema/resolved_table";
+import type { ResolvedDocumentContext, ResolvedTable } from "@/schema/resolved_table";
 import { isVisualScene, type VisualScene } from "@/schema/visual_element";
 
 const UPLOADED_SCENE_STORAGE_KEY = "uploaded-scene";
 
 export type CanvasScenePayload = {
   scene?: VisualScene;
+  documentContext?: ResolvedDocumentContext;
   resolvedTables?: ResolvedTable[];
   chartRecommendations?: ChartRecommendation[];
   dashboardCandidates?: DashboardCandidate[];
@@ -42,6 +43,25 @@ function isResolvedTable(input: unknown): input is ResolvedTable {
   );
 }
 
+function isDocumentContext(input: unknown): input is ResolvedDocumentContext {
+  if (input === undefined) {
+    return true;
+  }
+
+  if (typeof input !== "object" || input === null) {
+    return false;
+  }
+
+  const context = input as Record<string, unknown>;
+
+  return (
+    (context.title === undefined || typeof context.title === "string") &&
+    (context.summary === undefined || typeof context.summary === "string") &&
+    Array.isArray(context.tableContexts) &&
+    Array.isArray(context.relationships)
+  );
+}
+
 export function isCanvasScenePayload(input: unknown): input is CanvasScenePayload {
   if (typeof input !== "object" || input === null) {
     return false;
@@ -54,6 +74,8 @@ export function isCanvasScenePayload(input: unknown): input is CanvasScenePayloa
   if (!sceneValid) {
     return false;
   }
+
+  const documentContextValid = isDocumentContext(payload.documentContext);
 
   const resolvedTablesValid =
     payload.resolvedTables === undefined ||
@@ -72,7 +94,14 @@ export function isCanvasScenePayload(input: unknown): input is CanvasScenePayloa
     payload.generationStage === "candidates" ||
     payload.generationStage === "ready";
 
-  return sceneValid && resolvedTablesValid && chartRecommendationsValid && dashboardCandidatesValid && generationStageValid;
+  return (
+    sceneValid &&
+    documentContextValid &&
+    resolvedTablesValid &&
+    chartRecommendationsValid &&
+    dashboardCandidatesValid &&
+    generationStageValid
+  );
 }
 
 export function stashUploadedScene(input: unknown): CanvasScenePayload {

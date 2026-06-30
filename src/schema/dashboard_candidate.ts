@@ -14,6 +14,11 @@ export type DashboardCandidateViewpoint =
   | "highlight"
   | "summary";
 
+export type DashboardCandidatePlanningViewpoint =
+  | "main_overview"
+  | "relationship"
+  | "detail_breakdown";
+
 export type DashboardCandidateBlockRole =
   | "hero"
   | "support"
@@ -37,6 +42,43 @@ export type DashboardCandidatePreviewIcon =
   | "pie"
   | "donut"
   | "scatter";
+
+export type DashboardCandidateVisualizationChartType =
+  | DashboardCandidatePreviewIcon
+  | "matrix"
+  | "funnel"
+  | "area"
+  | "tableSummary";
+
+export type DashboardCandidateVisualizationIntent =
+  | "comparison"
+  | "trend"
+  | "composition"
+  | "stage_change"
+  | "relationship"
+  | "ranking"
+  | "summary";
+
+export type DashboardCandidateVisualizationSuitability = "high" | "medium" | "low";
+
+export type DashboardCandidateVisualizationFields = {
+  categoryField?: string;
+  valueField?: string;
+  dateField?: string;
+  groupField?: string;
+  xField?: string;
+  yField?: string;
+};
+
+export type DashboardCandidateVisualizationOption = {
+  id: string;
+  tableId: string;
+  chartType: DashboardCandidateVisualizationChartType;
+  intent: DashboardCandidateVisualizationIntent;
+  fields: DashboardCandidateVisualizationFields;
+  reason: string;
+  suitability?: DashboardCandidateVisualizationSuitability;
+};
 
 export type DashboardCandidatePreviewBlock = {
   id: string;
@@ -95,7 +137,13 @@ export type DashboardCandidate = {
   notes?: string[];
   goal?: string;
   narrative?: string;
+  question?: string;
+  viewpoint?: DashboardCandidatePlanningViewpoint;
   sourceTableIds?: string[];
+  mainTableId?: string;
+  supportingTableIds?: string[];
+  visualizationPlan?: DashboardCandidateVisualizationOption[];
+  contextUsage?: string;
   viewpoints?: DashboardCandidateViewpoint[];
   layoutStrategy?: string;
   blocks?: DashboardCandidateBlock[];
@@ -136,6 +184,45 @@ function asViewpoint(value: unknown): DashboardCandidateViewpoint | null {
     value === "summary"
     ? value
     : null;
+}
+
+function asPlanningViewpoint(value: unknown): DashboardCandidatePlanningViewpoint | undefined {
+  return value === "main_overview" || value === "relationship" || value === "detail_breakdown" ? value : undefined;
+}
+
+function asVisualizationChartType(value: unknown): DashboardCandidateVisualizationChartType | undefined {
+  return value === "kpi" ||
+    value === "bar" ||
+    value === "verticalBar" ||
+    value === "horizontalBar" ||
+    value === "groupedBar" ||
+    value === "rankingBar" ||
+    value === "line" ||
+    value === "pie" ||
+    value === "donut" ||
+    value === "scatter" ||
+    value === "matrix" ||
+    value === "funnel" ||
+    value === "area" ||
+    value === "tableSummary"
+    ? value
+    : undefined;
+}
+
+function asVisualizationIntent(value: unknown): DashboardCandidateVisualizationIntent | undefined {
+  return value === "comparison" ||
+    value === "trend" ||
+    value === "composition" ||
+    value === "stage_change" ||
+    value === "relationship" ||
+    value === "ranking" ||
+    value === "summary"
+    ? value
+    : undefined;
+}
+
+function asVisualizationSuitability(value: unknown): DashboardCandidateVisualizationSuitability | undefined {
+  return value === "high" || value === "medium" || value === "low" ? value : undefined;
 }
 
 function asRole(value: unknown): DashboardCandidateBlockRole {
@@ -227,6 +314,23 @@ function normalizeDataBinding(value: unknown): DashboardCandidateBlock["dataBind
   };
 
   return Object.values(binding).some(Boolean) ? binding : undefined;
+}
+
+function normalizeVisualizationFields(value: unknown): DashboardCandidateVisualizationFields {
+  const raw = asRecord(value);
+
+  if (!raw) {
+    return {};
+  }
+
+  return {
+    ...(asString(raw.categoryField) ? { categoryField: asString(raw.categoryField) } : {}),
+    ...(asString(raw.valueField) ? { valueField: asString(raw.valueField) } : {}),
+    ...(asString(raw.dateField) ? { dateField: asString(raw.dateField) } : {}),
+    ...(asString(raw.groupField) ? { groupField: asString(raw.groupField) } : {}),
+    ...(asString(raw.xField) ? { xField: asString(raw.xField) } : {}),
+    ...(asString(raw.yField) ? { yField: asString(raw.yField) } : {}),
+  };
 }
 
 function normalizePreviewBlock(value: unknown, index: number): DashboardCandidatePreviewBlock | null {
@@ -321,6 +425,35 @@ function normalizeBlock(value: unknown, index: number): DashboardCandidateBlock 
   };
 }
 
+function normalizeVisualizationOption(value: unknown, index: number): DashboardCandidateVisualizationOption | null {
+  const raw = asRecord(value);
+
+  if (!raw) {
+    return null;
+  }
+
+  const tableId = asString(raw.tableId);
+  const chartType = asVisualizationChartType(raw.chartType);
+  const intent = asVisualizationIntent(raw.intent);
+  const reason = asString(raw.reason);
+
+  if (!tableId || !chartType || !intent || !reason) {
+    return null;
+  }
+
+  return {
+    id: asString(raw.id) ?? `visualization-option-${index + 1}`,
+    tableId,
+    chartType,
+    intent,
+    fields: normalizeVisualizationFields(raw.fields),
+    reason,
+    ...(asVisualizationSuitability(raw.suitability)
+      ? { suitability: asVisualizationSuitability(raw.suitability) }
+      : {}),
+  };
+}
+
 export function isDashboardCandidate(input: unknown): input is DashboardCandidate {
   const raw = asRecord(input);
 
@@ -374,6 +507,11 @@ export function normalizeDashboardCandidates(input: unknown): DashboardCandidate
         : [];
 
       const preview = normalizePreview(raw.preview);
+      const visualizationPlan = Array.isArray(raw.visualizationPlan)
+        ? raw.visualizationPlan
+            .map((option, optionIndex) => normalizeVisualizationOption(option, optionIndex))
+            .filter((option): option is DashboardCandidateVisualizationOption => option !== null)
+        : [];
 
       if (!svgPreview && blocks.length === 0) {
         return null;
@@ -389,7 +527,15 @@ export function normalizeDashboardCandidates(input: unknown): DashboardCandidate
         ...(asStringArray(raw.notes).length > 0 ? { notes: asStringArray(raw.notes) } : {}),
         ...(asString(raw.goal) ? { goal: asString(raw.goal) } : {}),
         ...(asString(raw.narrative) ? { narrative: asString(raw.narrative) } : {}),
+        ...(asString(raw.question) ? { question: asString(raw.question) } : {}),
+        ...(asPlanningViewpoint(raw.viewpoint) ? { viewpoint: asPlanningViewpoint(raw.viewpoint) } : {}),
         ...(asStringArray(raw.sourceTableIds).length > 0 ? { sourceTableIds: asStringArray(raw.sourceTableIds) } : {}),
+        ...(asString(raw.mainTableId) ? { mainTableId: asString(raw.mainTableId) } : {}),
+        ...(asStringArray(raw.supportingTableIds).length > 0
+          ? { supportingTableIds: asStringArray(raw.supportingTableIds) }
+          : {}),
+        ...(visualizationPlan.length > 0 ? { visualizationPlan } : {}),
+        ...(asString(raw.contextUsage) ? { contextUsage: asString(raw.contextUsage) } : {}),
         ...(viewpoints.length > 0 ? { viewpoints } : {}),
         ...(asString(raw.layoutStrategy) ? { layoutStrategy: asString(raw.layoutStrategy) } : {}),
         ...(blocks.length > 0 ? { blocks } : {}),
