@@ -3,6 +3,7 @@ import { isChartRecommendation } from "@/schema/chart_recommendation";
 import type { DashboardCandidate } from "@/schema/dashboard_candidate";
 import { isDashboardCandidate } from "@/schema/dashboard_candidate";
 import type { ResolvedDocumentContext, ResolvedTable } from "@/schema/resolved_table";
+import type { TableChartOptionGroup } from "@/schema/table_chart_option";
 import { isVisualScene, type VisualScene } from "@/schema/visual_element";
 
 const UPLOADED_SCENE_STORAGE_KEY = "uploaded-scene";
@@ -11,6 +12,7 @@ export type CanvasScenePayload = {
   scene?: VisualScene;
   documentContext?: ResolvedDocumentContext;
   resolvedTables?: ResolvedTable[];
+  chartOptionsByTable?: TableChartOptionGroup[];
   chartRecommendations?: ChartRecommendation[];
   dashboardCandidates?: DashboardCandidate[];
   generationStage?: "candidates" | "ready";
@@ -62,6 +64,24 @@ function isDocumentContext(input: unknown): input is ResolvedDocumentContext {
   );
 }
 
+function isTableChartOptionGroup(input: unknown): input is TableChartOptionGroup {
+  if (typeof input !== "object" || input === null) {
+    return false;
+  }
+
+  const group = input as Record<string, unknown>;
+
+  return (
+    typeof group.tableId === "string" &&
+    (group.tableRole === "primary" ||
+      group.tableRole === "supporting" ||
+      group.tableRole === "lookup" ||
+      group.tableRole === "context") &&
+    typeof group.tableSummary === "string" &&
+    Array.isArray(group.lenses)
+  );
+}
+
 export function isCanvasScenePayload(input: unknown): input is CanvasScenePayload {
   if (typeof input !== "object" || input === null) {
     return false;
@@ -81,6 +101,10 @@ export function isCanvasScenePayload(input: unknown): input is CanvasScenePayloa
     payload.resolvedTables === undefined ||
     (Array.isArray(payload.resolvedTables) && payload.resolvedTables.every(isResolvedTable));
 
+  const chartOptionsByTableValid =
+    payload.chartOptionsByTable === undefined ||
+    (Array.isArray(payload.chartOptionsByTable) && payload.chartOptionsByTable.every(isTableChartOptionGroup));
+
   const chartRecommendationsValid =
     payload.chartRecommendations === undefined ||
     (Array.isArray(payload.chartRecommendations) && payload.chartRecommendations.every(isChartRecommendation));
@@ -98,6 +122,7 @@ export function isCanvasScenePayload(input: unknown): input is CanvasScenePayloa
     sceneValid &&
     documentContextValid &&
     resolvedTablesValid &&
+    chartOptionsByTableValid &&
     chartRecommendationsValid &&
     dashboardCandidatesValid &&
     generationStageValid

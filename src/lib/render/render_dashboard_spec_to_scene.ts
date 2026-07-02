@@ -1,5 +1,6 @@
 import type { ParsedDataset } from "@/lib/data/parse_csv";
 import { renderBarChart } from "@/lib/render/render_bar_chart";
+import { renderComboBarLineChart } from "@/lib/render/render_combo_bar_line_chart";
 import { renderDonutChart } from "@/lib/render/render_donut_chart";
 import { renderKpiBlock } from "@/lib/render/render_kpi_block";
 import { renderLineChart } from "@/lib/render/render_line_chart";
@@ -146,6 +147,39 @@ function canRenderLineBlock(block: DashboardBlock, table: ResolvedTable): boolea
   return table.analysis.numericColumns.includes(valueField) && validPointCount >= 2;
 }
 
+function canRenderComboBarLineBlock(block: DashboardBlock, table: ResolvedTable): boolean {
+  const barValueField = block.dataBinding?.barValueField;
+  const lineValueField = block.dataBinding?.lineValueField;
+  const xField = block.dataBinding?.dateField ?? block.dataBinding?.categoryField;
+
+  if (!barValueField || !lineValueField || !xField || barValueField === lineValueField) {
+    return false;
+  }
+
+  if (!table.columns.includes(xField) || !table.columns.includes(barValueField) || !table.columns.includes(lineValueField)) {
+    return false;
+  }
+
+  const validPointCount = table.rows.filter((row) => {
+    const rawX = row[xField];
+    const rawBarValue = row[barValueField];
+    const rawLineValue = row[lineValueField];
+
+    return (
+      typeof rawX === "string" &&
+      rawX.trim() &&
+      typeof rawBarValue === "string" &&
+      rawBarValue.trim() &&
+      typeof rawLineValue === "string" &&
+      rawLineValue.trim()
+    );
+  }).length;
+
+  return table.analysis.numericColumns.includes(barValueField) &&
+    table.analysis.numericColumns.includes(lineValueField) &&
+    validPointCount >= 2;
+}
+
 function renderBlock(block: DashboardBlock, tables: ResolvedTable[]): VisualElement[] {
   if (block.type === "text") {
     return renderTextBlock(block);
@@ -189,6 +223,18 @@ function renderBlock(block: DashboardBlock, tables: ResolvedTable[]): VisualElem
     }
 
     return renderLineChart(block, dataset, table.analysis);
+  }
+
+  if (block.type === "chart" && block.chartType === "comboBarLine") {
+    if (!canRenderComboBarLineBlock(block, table)) {
+      return renderNoteBlock({
+        ...block,
+        title: block.title ?? "Combo chart unavailable",
+        message: block.message ?? "Combo chart requires a shared x-axis plus distinct barValueField and lineValueField.",
+      });
+    }
+
+    return renderComboBarLineChart(block, dataset);
   }
 
   if (block.type === "chart" && block.chartType === "pie") {

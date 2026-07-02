@@ -10,7 +10,8 @@ export type ChartType =
   | "scatter"
   | "pie"
   | "donut"
-  | "kpi";
+  | "kpi"
+  | "comboBarLine";
 
 export type VisualIntent =
   | "trend"
@@ -32,6 +33,8 @@ export type DashboardBlock = {
     tableId?: string;
     categoryField?: string;
     valueField?: string;
+    barValueField?: string;
+    lineValueField?: string;
     dateField?: string;
     groupField?: string;
   };
@@ -98,7 +101,8 @@ function asChartType(value: unknown): ChartType | undefined {
     value === "scatter" ||
     value === "pie" ||
     value === "donut" ||
-    value === "kpi"
+    value === "kpi" ||
+    value === "comboBarLine"
     ? value
     : undefined;
 }
@@ -124,10 +128,12 @@ function normalizeDataBinding(value: unknown): DashboardBlock["dataBinding"] {
   const tableId = asString(raw.tableId);
   const categoryField = asString(raw.categoryField);
   const valueField = asString(raw.valueField);
+  const barValueField = asString(raw.barValueField);
+  const lineValueField = asString(raw.lineValueField);
   const dateField = asString(raw.dateField);
   const groupField = asString(raw.groupField);
 
-  if (!tableId && !categoryField && !valueField && !dateField && !groupField) {
+  if (!tableId && !categoryField && !valueField && !barValueField && !lineValueField && !dateField && !groupField) {
     return undefined;
   }
 
@@ -135,6 +141,8 @@ function normalizeDataBinding(value: unknown): DashboardBlock["dataBinding"] {
     tableId,
     categoryField,
     valueField,
+    barValueField,
+    lineValueField,
     dateField,
     groupField,
   };
@@ -157,6 +165,15 @@ function normalizeBindingForBlock(block: {
 
   if (block.chartType === "line") {
     return binding.tableId && binding.valueField && (binding.dateField || binding.categoryField) ? binding : undefined;
+  }
+
+  if (block.chartType === "comboBarLine") {
+    return binding.tableId &&
+      binding.barValueField &&
+      binding.lineValueField &&
+      (binding.dateField || binding.categoryField)
+      ? binding
+      : undefined;
   }
 
   if (block.chartType === "bar" || block.chartType === "rankingBar" || block.chartType === "pie" || block.chartType === "donut") {

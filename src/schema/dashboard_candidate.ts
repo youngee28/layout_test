@@ -41,7 +41,8 @@ export type DashboardCandidatePreviewIcon =
   | "line"
   | "pie"
   | "donut"
-  | "scatter";
+  | "scatter"
+  | "comboBarLine";
 
 export type DashboardCandidateVisualizationChartType =
   | DashboardCandidatePreviewIcon
@@ -64,6 +65,8 @@ export type DashboardCandidateVisualizationSuitability = "high" | "medium" | "lo
 export type DashboardCandidateVisualizationFields = {
   categoryField?: string;
   valueField?: string;
+  barValueField?: string;
+  lineValueField?: string;
   dateField?: string;
   groupField?: string;
   xField?: string;
@@ -116,6 +119,8 @@ export type DashboardCandidateBlock = {
     tableId?: string;
     categoryField?: string;
     valueField?: string;
+    barValueField?: string;
+    lineValueField?: string;
     dateField?: string;
     groupField?: string;
   };
@@ -256,6 +261,7 @@ function asChartType(value: unknown): DashboardCandidateBlock["chartType"] {
     value === "rankingBar" ||
     value === "line" ||
     value === "scatter" ||
+    value === "comboBarLine" ||
     value === "pie" ||
     value === "donut" ||
     value === "kpi"
@@ -273,7 +279,8 @@ function asPreviewIcon(value: unknown): DashboardCandidatePreviewIcon | undefine
     value === "line" ||
     value === "pie" ||
     value === "donut" ||
-    value === "scatter"
+    value === "scatter" ||
+    value === "comboBarLine"
     ? value
     : undefined;
 }
@@ -309,6 +316,8 @@ function normalizeDataBinding(value: unknown): DashboardCandidateBlock["dataBind
     tableId: asString(raw.tableId),
     categoryField: asString(raw.categoryField),
     valueField: asString(raw.valueField),
+    barValueField: asString(raw.barValueField),
+    lineValueField: asString(raw.lineValueField),
     dateField: asString(raw.dateField),
     groupField: asString(raw.groupField),
   };
@@ -326,6 +335,8 @@ function normalizeVisualizationFields(value: unknown): DashboardCandidateVisuali
   return {
     ...(asString(raw.categoryField) ? { categoryField: asString(raw.categoryField) } : {}),
     ...(asString(raw.valueField) ? { valueField: asString(raw.valueField) } : {}),
+    ...(asString(raw.barValueField) ? { barValueField: asString(raw.barValueField) } : {}),
+    ...(asString(raw.lineValueField) ? { lineValueField: asString(raw.lineValueField) } : {}),
     ...(asString(raw.dateField) ? { dateField: asString(raw.dateField) } : {}),
     ...(asString(raw.groupField) ? { groupField: asString(raw.groupField) } : {}),
     ...(asString(raw.xField) ? { xField: asString(raw.xField) } : {}),

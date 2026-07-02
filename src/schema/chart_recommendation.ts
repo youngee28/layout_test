@@ -5,13 +5,15 @@ type UnknownRecord = Record<string, unknown>;
 export type ChartRecommendation = {
   id: string;
   tableId: string;
-  chartType: "bar" | "rankingBar" | "line" | "kpi";
+  chartType: "bar" | "rankingBar" | "line" | "kpi" | "comboBarLine";
   intent?: "trend" | "comparison" | "ranking" | "highlight" | "summary" | "share";
   title?: string;
   message?: string;
   usedFields: {
     categoryField?: string;
     valueField?: string;
+    barValueField?: string;
+    lineValueField?: string;
     dateField?: string;
     groupField?: string;
   };
@@ -28,7 +30,7 @@ export function isChartRecommendation(input: unknown): input is ChartRecommendat
     return false;
   }
 
-  if (!(raw.chartType === "bar" || raw.chartType === "rankingBar" || raw.chartType === "line" || raw.chartType === "kpi")) {
+  if (!(raw.chartType === "bar" || raw.chartType === "rankingBar" || raw.chartType === "line" || raw.chartType === "kpi" || raw.chartType === "comboBarLine")) {
     return false;
   }
 
@@ -44,6 +46,8 @@ export function isChartRecommendation(input: unknown): input is ChartRecommendat
     (raw.message === undefined || typeof raw.message === "string") &&
     (usedFields.categoryField === undefined || typeof usedFields.categoryField === "string") &&
     (usedFields.valueField === undefined || typeof usedFields.valueField === "string") &&
+    (usedFields.barValueField === undefined || typeof usedFields.barValueField === "string") &&
+    (usedFields.lineValueField === undefined || typeof usedFields.lineValueField === "string") &&
     (usedFields.dateField === undefined || typeof usedFields.dateField === "string") &&
     (usedFields.groupField === undefined || typeof usedFields.groupField === "string")
   );
@@ -59,7 +63,7 @@ export function createChartRecommendations(spec: DashboardSpec): ChartRecommenda
         return [];
       }
 
-      if (!(chartType === "bar" || chartType === "rankingBar" || chartType === "line" || chartType === "kpi")) {
+      if (!(chartType === "bar" || chartType === "rankingBar" || chartType === "line" || chartType === "kpi" || chartType === "comboBarLine")) {
         return [];
       }
 
@@ -73,6 +77,8 @@ export function createChartRecommendations(spec: DashboardSpec): ChartRecommenda
         usedFields: {
           categoryField: block.dataBinding?.categoryField,
           valueField: block.dataBinding?.valueField,
+          barValueField: block.dataBinding?.barValueField,
+          lineValueField: block.dataBinding?.lineValueField,
           dateField: block.dataBinding?.dateField,
           groupField: block.dataBinding?.groupField,
         },
