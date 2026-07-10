@@ -1,4 +1,5 @@
 import { normalizeSvgPreview } from "@/lib/svg/normalize_svg_preview";
+import type { DashboardBriefChartRoleType } from "@/schema/dashboard_brief";
 import type { ChartType } from "@/schema/dashboard_spec";
 
 type UnknownRecord = Record<string, unknown>;
@@ -140,6 +141,10 @@ export type DashboardCandidate = {
   svgPreview?: DashboardCandidateSvgPreview;
   usedFields?: string[];
   notes?: string[];
+  briefId?: string;
+  purpose?: string;
+  targetKpis?: string[];
+  chartRoles?: DashboardBriefChartRoleType[];
   goal?: string;
   narrative?: string;
   question?: string;
@@ -228,6 +233,19 @@ function asVisualizationIntent(value: unknown): DashboardCandidateVisualizationI
 
 function asVisualizationSuitability(value: unknown): DashboardCandidateVisualizationSuitability | undefined {
   return value === "high" || value === "medium" || value === "low" ? value : undefined;
+}
+
+function asBriefChartRole(value: unknown): DashboardBriefChartRoleType | null {
+  return value === "summary" ||
+    value === "trend" ||
+    value === "breakdown" ||
+    value === "ranking" ||
+    value === "composition" ||
+    value === "diagnostic" ||
+    value === "detail" ||
+    value === "relationship"
+    ? value
+    : null;
 }
 
 function asRole(value: unknown): DashboardCandidateBlockRole {
@@ -518,6 +536,11 @@ export function normalizeDashboardCandidates(input: unknown): DashboardCandidate
         : [];
 
       const preview = normalizePreview(raw.preview);
+      const chartRoles = Array.isArray(raw.chartRoles)
+        ? raw.chartRoles
+            .map((role) => asBriefChartRole(role))
+            .filter((role): role is DashboardBriefChartRoleType => role !== null)
+        : [];
       const visualizationPlan = Array.isArray(raw.visualizationPlan)
         ? raw.visualizationPlan
             .map((option, optionIndex) => normalizeVisualizationOption(option, optionIndex))
@@ -536,6 +559,10 @@ export function normalizeDashboardCandidates(input: unknown): DashboardCandidate
         ...(svgPreview ? { svgPreview } : {}),
         ...(asStringArray(raw.usedFields).length > 0 ? { usedFields: asStringArray(raw.usedFields) } : {}),
         ...(asStringArray(raw.notes).length > 0 ? { notes: asStringArray(raw.notes) } : {}),
+        ...(asString(raw.briefId) ? { briefId: asString(raw.briefId) } : {}),
+        ...(asString(raw.purpose) ? { purpose: asString(raw.purpose) } : {}),
+        ...(asStringArray(raw.targetKpis).length > 0 ? { targetKpis: asStringArray(raw.targetKpis) } : {}),
+        ...(chartRoles.length > 0 ? { chartRoles } : {}),
         ...(asString(raw.goal) ? { goal: asString(raw.goal) } : {}),
         ...(asString(raw.narrative) ? { narrative: asString(raw.narrative) } : {}),
         ...(asString(raw.question) ? { question: asString(raw.question) } : {}),

@@ -77,6 +77,7 @@ export function UploadCard() {
       stashUploadedScene({
         documentContext: candidatesResult.documentContext,
         resolvedTables: candidatesResult.resolvedTables,
+        dashboardBriefs: candidatesResult.dashboardBriefs,
         chartOptionsByTable: candidatesResult.chartOptionsByTable,
         dashboardCandidates: candidatesResult.dashboardCandidates,
         generationStage: candidatesResult.generationStage ?? "candidates",

@@ -2,6 +2,8 @@ import type { ChartRecommendation } from "@/schema/chart_recommendation";
 import { isChartRecommendation } from "@/schema/chart_recommendation";
 import type { DashboardCandidate } from "@/schema/dashboard_candidate";
 import { isDashboardCandidate } from "@/schema/dashboard_candidate";
+import type { DashboardBrief } from "@/schema/dashboard_brief";
+import { isDashboardBrief } from "@/schema/dashboard_brief";
 import type { ResolvedDocumentContext, ResolvedTable } from "@/schema/resolved_table";
 import type { TableChartOptionGroup } from "@/schema/table_chart_option";
 import { isVisualScene, type VisualScene } from "@/schema/visual_element";
@@ -12,6 +14,7 @@ export type CanvasScenePayload = {
   scene?: VisualScene;
   documentContext?: ResolvedDocumentContext;
   resolvedTables?: ResolvedTable[];
+  dashboardBriefs?: DashboardBrief[];
   chartOptionsByTable?: TableChartOptionGroup[];
   chartRecommendations?: ChartRecommendation[];
   dashboardCandidates?: DashboardCandidate[];
@@ -105,6 +108,10 @@ export function isCanvasScenePayload(input: unknown): input is CanvasScenePayloa
     payload.chartOptionsByTable === undefined ||
     (Array.isArray(payload.chartOptionsByTable) && payload.chartOptionsByTable.every(isTableChartOptionGroup));
 
+  const dashboardBriefsValid =
+    payload.dashboardBriefs === undefined ||
+    (Array.isArray(payload.dashboardBriefs) && payload.dashboardBriefs.every(isDashboardBrief));
+
   const chartRecommendationsValid =
     payload.chartRecommendations === undefined ||
     (Array.isArray(payload.chartRecommendations) && payload.chartRecommendations.every(isChartRecommendation));
@@ -122,6 +129,7 @@ export function isCanvasScenePayload(input: unknown): input is CanvasScenePayloa
     sceneValid &&
     documentContextValid &&
     resolvedTablesValid &&
+    dashboardBriefsValid &&
     chartOptionsByTableValid &&
     chartRecommendationsValid &&
     dashboardCandidatesValid &&

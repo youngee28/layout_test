@@ -39,9 +39,39 @@
 | 판단 정보 | `tables[].reason` | string | X | 해당 영역을 해당 유형으로 판단한 근거 |
 
 
-## 2. DASHBOARD_CANDIDATES_SCHEMA
+## 2. DASHBOARD_BRIEFS_SCHEMA
 
-### 2-1. candidates[]
+### 2-1. dashboardBriefs[]
+
+| 구분 | 항목 | 타입 | 필수 여부 | 구성 |
+|:---:|:---:|:---:|:---:|---|
+| 최상위 | `dashboardBriefs` | object[] | O | 대시보드 후보 생성을 위한 목적 중심 brief 목록 |
+| Brief 정보 | `dashboardBriefs[].id` | string | O | brief 고유 ID |
+| Brief 정보 | `dashboardBriefs[].title` | string | O | brief 제목 |
+| Brief 정보 | `dashboardBriefs[].purposeType` | string | O | `executive_overview`, `performance_monitoring`, `diagnostic_analysis`, `segment_comparison`, `trend_monitoring`, `detail_breakdown`, `relationship_analysis` |
+| Brief 정보 | `dashboardBriefs[].purpose` | string | O | 이 데이터로 만들 대시보드의 목적 |
+| Brief 정보 | `dashboardBriefs[].audienceOrUseCase` | string | O | 사용 대상 또는 의사결정 맥락 |
+| Brief 정보 | `dashboardBriefs[].primaryQuestion` | string | X | 목적을 설명하는 보조 질문 |
+| 데이터 참조 | `dashboardBriefs[].sourceTableIds` | array<string> | O | brief에 사용하는 표 ID 목록 |
+| KPI | `dashboardBriefs[].kpis` | object[] | O | 목적 달성에 필요한 KPI 목록 |
+| 차트 역할 | `dashboardBriefs[].chartRoles` | object[] | O | 대시보드 안에서 필요한 시각적 역할 목록 |
+| 조립 전략 | `dashboardBriefs[].candidateStrategy` | string | O | 후보 대시보드로 조립하는 방향 |
+
+### 2-2. chartRoles[].chartCandidates[]
+
+| 구분 | 항목 | 타입 | 필수 여부 | 구성 |
+|:---:|:---:|:---:|:---:|---|
+| 차트 후보 | `chartCandidates[].id` | string | O | 차트 후보 고유 ID |
+| 차트 후보 | `chartCandidates[].tableId` | string | O | 사용 표 ID |
+| 차트 후보 | `chartCandidates[].chartType` | string | O | `kpi`, `bar`, `verticalBar`, `horizontalBar`, `groupedBar`, `rankingBar`, `line`, `pie`, `donut`, `comboBarLine`, `scatter`, `matrix`, `funnel`, `area`, `tableSummary` |
+| 차트 후보 | `chartCandidates[].intent` | string | O | `comparison`, `trend`, `composition`, `stage_change`, `relationship`, `ranking`, `summary` |
+| 차트 후보 | `chartCandidates[].fields` | object | O | `primaryMeasure`, `secondaryMeasure`, `category`, `date`, `group`, `x`, `y` |
+| 차트 후보 | `chartCandidates[].reason` | string | O | 해당 역할에 적합한 이유 |
+
+
+## 3. DASHBOARD_CANDIDATES_SCHEMA
+
+### 3-1. candidates[]
 
 | 구분 | 항목 | 타입 | 필수 여부 | 구성 |
 |:---:|:---:|:---:|:---:|---|
@@ -50,7 +80,11 @@
 | 후보 정보 | `candidates[].title` | string | O | 대시보드 후보 제목 |
 | 후보 정보 | `candidates[].summary` | string | O | 후보 요약 설명 |
 | 후보 정보 | `candidates[].designIntent` | string | O | 디자인 의도 및 표현 방향 |
-| 후보 정보 | `candidates[].question` | string | O | 해당 대시보드가 답하고자 하는 핵심 질문 |
+| 후보 정보 | `candidates[].briefId` | string | O | 기반이 된 dashboard brief ID |
+| 후보 정보 | `candidates[].purpose` | string | O | 해당 대시보드의 목적 |
+| 후보 정보 | `candidates[].targetKpis` | array<string> | O | 후보가 강조하는 KPI 이름 목록 |
+| 후보 정보 | `candidates[].chartRoles` | array<string> | O | 후보가 사용하는 chart role 목록 |
+| 후보 정보 | `candidates[].question` | string | O | 해당 대시보드 목적을 설명하는 보조 질문 |
 | 후보 정보 | `candidates[].viewpoint` | string | O | `main_overview`, `relationship`, `detail_breakdown` |
 | 데이터 참조 | `candidates[].sourceTableIds` | array<string> | O | 후보 생성에 사용된 전체 표 ID 목록 |
 | 데이터 참조 | `candidates[].mainTableId` | string | O | 중심이 되는 대표 표 ID |
@@ -62,7 +96,7 @@
 | 참고 사항 | `candidates[].notes` | array<string> | X | 생성 과정에서의 참고 사항 또는 주의점 |
 
 
-### 2-2. visualizationPlan[]
+### 3-2. visualizationPlan[]
 
 | 구분 | 항목 | 타입 | 필수 여부 | 구성 |
 |:---:|:---:|:---:|:---:|---|
